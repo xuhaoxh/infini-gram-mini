@@ -1,0 +1,11 @@
+prefix=/mmfs1/gscratch/h2lab/xuhao/fm_index/sdsl-lite
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: sdsl
+Description: SDSL: Succinct Data Structure Library
+Version: 2.1.0
+URL: https://github.com/simongog/sdsl-lite
+Libs: -L${libdir} -lsdsl -ldivsufsort -ldivsufsort64
+Cflags: -I${includedir}

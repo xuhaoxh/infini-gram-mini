@@ -1,0 +1,11 @@
+prefix=/mmfs1/gscratch/h2lab/xuhao/fm_index/sdsl-lite
+exec_prefix=${prefix}
+libdir=/mmfs1/gscratch/h2lab/xuhao/fm_index/sdsl-lite/lib
+includedir=/mmfs1/gscratch/h2lab/xuhao/fm_index/sdsl-lite/include
+
+Name: libdivsufsort64
+Description: A lightweight suffix sorting library
+Version: 2.0.1-13-g0f24acd
+URL: https://github.com/y-256/libdivsufsort
+Libs: -L${libdir} -ldivsufsort64
+Cflags: -I${includedir}
