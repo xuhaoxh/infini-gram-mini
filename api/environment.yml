@@ -1,0 +1,10 @@
+name: fm-index-api
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11.8
+  - pip:
+    - flask
+    - pybind11
+    # compile C++ module
