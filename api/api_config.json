@@ -1,6 +1,6 @@
 [
     {
-        "name": "piletrain",
-        "dir": "/data_piletrain/piletrain"
+        "name": "pileval",
+        "dir": "/data_piletrain/pileval"
     }
 ]

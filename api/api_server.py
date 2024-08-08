@@ -52,8 +52,9 @@ class Processor:
                     haystack = span[0]
                     new_spans += self._replace(haystack, needle, label='0')
             spans = new_spans
+        result = {'spans': spans}
 
-        return spans
+        return result
 
     def _replace(self, haystack, needle, label):
         spans = []
