@@ -3,21 +3,12 @@
 #include "../fm_engine/cpp_engine.h"
 
 int main() {
-    auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-train"});
+    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-train"}, false);
+    auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/experiments/pile_val"});
 
     {
         cout << "count, empty query" << endl;
         string query = "";
-        cout << "query: " << query<< endl;
-        auto result = engine.count(query);
-        cout << "count: " << result.count << endl;
-        cout << "count_by_shard: " << result.count_by_shard << endl;
-        cout << "lo_by_shard: " << result.lo_by_shard << endl;
-        cout << endl;
-    }
-    {
-        cout << "count, simple query" << endl;
-        string query = "natural language processing";
         cout << "query: " << query<< endl;
         auto result = engine.count(query);
         cout << "count: " << result.count << endl;
@@ -35,12 +26,43 @@ int main() {
         cout << "lo_by_shard: " << result.lo_by_shard << endl;
         cout << endl;
     }
+    {
+        cout << "reconstuct, simple query, zero_count" << endl;
+        string query = "\xfb";
+        cout << "query: " << query<< endl;
+        auto result = engine.reconstruct(query, 1, 200, 200);
+        cout << "text: " << result.text << endl;
+        cout << "shard_num: " << result.shard_num << endl;
+        cout << endl;
+    }
 
     {
-        cout << "reconstruct, simple query" << endl;
-        string query = "natural language processing";
+        cout << "count, simple query" << endl;
+        // string query = "natural language processing";
+        string query = "3.14";
         cout << "query: " << query<< endl;
-        auto result = engine.reconstruct(query, 10);
+        auto result = engine.count(query);
+        cout << "count: " << result.count << endl;
+        cout << "count_by_shard: " << result.count_by_shard << endl;
+        cout << "lo_by_shard: " << result.lo_by_shard << endl;
+        cout << endl;
+    }
+    {
+        cout << "locate, simple query" << endl;
+        // string query = "natural language processing";
+        string query = "3.14";
+        cout << "query: " << query<< endl;
+        auto result = engine.locate(query, 752);
+        cout << "location: " << result.location << endl;
+        cout << "shard_num: " << result.shard_num << endl;
+        cout << endl;
+    }
+    {
+        cout << "reconstruct, simple query" << endl;
+        // string query = "natural language processing";
+        string query = "3.14";
+        cout << "query: " << query<< endl;
+        auto result = engine.reconstruct(query, 753, 200, 300);
         cout << "text: " << result.text << endl;
         cout << "shard_num: " << result.shard_num << endl;
         cout << endl;

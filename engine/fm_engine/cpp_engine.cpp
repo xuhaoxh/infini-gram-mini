@@ -27,9 +27,8 @@ PYBIND11_MODULE(cpp_engine, m) {
         .def_readwrite("shard_num", &ReconstructResult::shard_num);
 
     py::class_<Engine>(m, "Engine")
-        .def(py::init<const vector<string>, size_t, size_t>())
+        .def(py::init<const vector<string>>())
         .def("count", &Engine::count, "query"_a)
         .def("locate", &Engine::locate, "query"_a, "num_occ"_a)
-        .def("reconstruct", &Engine::reconstruct, "query"_a, "num_occ"_a);
-        // .def("reconstruct", &Engine::reconstruct, "location"_a, "shard_number"_a, "query_length"_a);
+        .def("reconstruct", &Engine::reconstruct, "query"_a, "num_occ"_a, "pre_text"_a, "post_text"_a);
 }
