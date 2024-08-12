@@ -35,8 +35,8 @@ class Processor:
     def count(self, query):
         return self.engine.count(query=query)
 
-    def reconstruct(self, query, num_occ):
-        result = self.engine.reconstruct(query=query, num_occ=num_occ)
+    def reconstruct(self, query, num_occ, pre_text, post_text):
+        result = self.engine.reconstruct(query=query, num_occ=num_occ, pre_text=pre_text, post_text=post_text)
 
         if 'error' in result:
             return result
