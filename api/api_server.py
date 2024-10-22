@@ -18,8 +18,9 @@ class Processor:
 
     def __init__(self, config):
         assert 'dir' in config
+        assert 'load_to_ram' in config
 
-        self.engine = FmIndexEngine(index_dir=config['dir'])
+        self.engine = FmIndexEngine(index_dir=config['dir'], load_to_ram=config['load_to_ram'])
 
     def process(self, query_type, query, **kwargs):
         if type(query) != str:

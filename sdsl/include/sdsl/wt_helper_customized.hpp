@@ -12,22 +12,31 @@
 #include <fstream>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <variant>
+#include <sstream>
+#include <type_traits>
 
 template<typename T>
-class NodeVector : public std::vector<T> {
+class CustomVector : public std::vector<T> {
 private:
     T* mmap_ptr = nullptr;
     size_t vec_size = 0;
 
 public:
-    NodeVector() = default;
-    NodeVector(T* mmap_ptr, size_t vec_size) : mmap_ptr(mmap_ptr), vec_size(vec_size) {}
-    NodeVector(const std::vector<T>& vec) : std::vector<T>(vec), vec_size(vec.size()) {}
+    CustomVector() = default;
+    CustomVector(T* mmap_ptr, size_t vec_size) : mmap_ptr(mmap_ptr), vec_size(vec_size) {}
+    CustomVector(const std::vector<T>& vec) : std::vector<T>(vec), vec_size(vec.size()) {}
+    CustomVector(size_t size, T* arr) : std::vector<T>(arr, arr + size) {}
 
-    ~NodeVector() {
+    ~CustomVector() {
         if (mmap_ptr != nullptr) {
             munmap(mmap_ptr, vec_size * sizeof(T));
         }
+    }
+
+    void resize(size_t new_size) {
+        if (mmap_ptr == nullptr) std::vector<T>::resize(new_size);
+        vec_size = new_size;
     }
 
     T& operator[](size_t index) const {
@@ -35,7 +44,9 @@ public:
             throw std::out_of_range("Index out of range");
         }
         if (mmap_ptr != nullptr) {
-            T* element = reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(mmap_ptr) + index * 22); // Hard-coded for _node struct
+            // T* element = mmap_ptr + index;
+            // std::cout << "Index: " << index << "   ";
+            T* element = reinterpret_cast<T*>(reinterpret_cast<uint8_t*>(mmap_ptr) + index * 22);
             
             uint64_t* ptr = reinterpret_cast<uint64_t*>(element);
             element->load_ptr(ptr);
@@ -45,7 +56,7 @@ public:
         }
     }
 
-    NodeVector& operator=(const std::vector<T>& other) {
+    CustomVector& operator=(const std::vector<T>& other) {
         this->assign(other.begin(), other.end());
         vec_size = other.size();
         return *this;
@@ -53,11 +64,6 @@ public:
 
     size_t size() const {
         return vec_size;
-    }
-
-    void resize(size_t new_size) {
-        if (mmap_ptr == nullptr) std::vector<T>::resize(new_size);
-        vec_size = new_size;
     }
 };
 
@@ -188,6 +194,7 @@ struct _node {
 
     void load_ptr(uint64_t* mmap_ptr) {
         bv_pos = *mmap_ptr;
+        // std::cout << "bv_pos: " << bv_pos << std::endl;
         bv_pos_rank = *(mmap_ptr + 1);
         
         const node_type* ptr_node = reinterpret_cast<const node_type*>(mmap_ptr + 2);
@@ -196,6 +203,54 @@ struct _node {
         child[1] = *(ptr_node + 2);
     }
 };
+
+template<class t_tree_strat_fat>
+struct _node_new {
+    using node_type = typename t_tree_strat_fat::node_type;
+    typedef uint64_t size_type;
+
+    char* ptr;
+    size_t size = sizeof(uint64_t) * 2 + sizeof(node_type) * 3;
+
+    _node_new(char* ptr = nullptr) : ptr(ptr) {}
+
+    uint64_t& bv_pos() {
+        return *reinterpret_cast<uint64_t*>(ptr);
+    }
+
+    uint64_t bv_pos_rank() const {
+        return *reinterpret_cast<const uint64_t*>(ptr + sizeof(uint64_t));
+    }
+
+    node_type parent() const {
+        return *reinterpret_cast<const node_type*>(ptr + 2 * sizeof(uint64_t));
+    }
+
+    node_type child(size_t index) const {
+        if (index >= 2) {
+            throw std::out_of_range("Index out of range");
+        }
+        return *reinterpret_cast<const node_type*>(ptr + 2 * sizeof(uint64_t) + index * sizeof(node_type));
+    }
+
+    size_type serialize(std::ostream& out, structure_tree_node* v=nullptr, std::string name="")const {
+        structure_tree_node* st_child = structure_tree::add_child(v, name, util::class_name(*this));
+        uint64_t written_bytes = 0;
+        written_bytes += write_member(bv_pos, out);
+        written_bytes += write_member(bv_pos_rank, out);
+        written_bytes += write_member(parent, out);
+        out.write((char*)child, 2*sizeof(child[0]));
+        written_bytes += 2*sizeof(child[0]);
+        structure_tree::add_size(st_child, written_bytes);
+        return written_bytes;
+    }
+
+    void load(std::istream& in) {
+        ptr = in.tellg();
+        in.seekg(size);
+    }
+};
+
 
 // TODO: version of _byte_tree for lex_ordered tree shapes
 //       m_c_to_leaf can be compressed and
@@ -212,15 +267,21 @@ struct _byte_tree {
     enum :uint32_t {fixed_sigma = 256};
     enum :uint8_t {int_width   = 8};      // width of the input integers
 
+    using new_data_node = _node_new<_byte_tree>;
+    
 
-    // std::vector<data_node> m_nodes;
-    NodeVector<data_node> m_nodes;              // nodes for the prefix code tree structure
+    // std::vector<data_node> m_nodes;              // nodes for the prefix code tree structure
     node_type          m_c_to_leaf[fixed_sigma]; // map symbol c to a leaf in the tree structure
     // // if m_c_to_leaf[c] == undef the char does
     // // not exists in the text
     uint64_t           m_path[fixed_sigma];      // path information for each char; the bits at position
     // 0..55 hold path information; bits 56..63 the length
     // of the path in binary representation
+
+    CustomVector<data_node> m_nodes;
+    // CustomVector<node_type> m_c_to_leaf;
+    // CustomVector<uint64_t> m_path;
+    // std::variant<CustomVector<data_node>, CustomVector<new_data_node>> m_nodes;
 
     void copy(const _byte_tree& bt) {
         m_nodes = bt.m_nodes;
@@ -354,8 +415,17 @@ struct _byte_tree {
         read_member(m_nodes_size, in);
         m_nodes = std::vector<data_node>(m_nodes_size);
         load_vector(m_nodes, in);
-        in.read((char*) m_c_to_leaf, fixed_sigma*sizeof(m_c_to_leaf[0]));
-        in.read((char*) m_path, fixed_sigma*sizeof(m_path[0]));
+
+        // std::cout << "m_node[0] bv_pos: " << m_nodes[0].bv_pos << std::endl;
+        // std::cout << "m_node[1] bv_pos: " << m_nodes[1].bv_pos << std::endl;
+
+        // node_type m_c_to_leaf_[fixed_sigma];
+        in.read((char*) m_c_to_leaf, fixed_sigma*sizeof(m_c_to_leaf[0])); // 256 * 2
+        // m_c_to_leaf = CustomVector<node_type>(fixed_sigma, m_c_to_leaf_);
+
+        // uint64_t m_path_[fixed_sigma];
+        in.read((char*) m_path, fixed_sigma*sizeof(m_path[0])); // 256 * 8
+        // m_path = CustomVector<uint64_t>(fixed_sigma, m_path_);
     }
 
     //! Loads the data structure from the given istream and file path.
@@ -377,15 +447,41 @@ struct _byte_tree {
         assert (node_map_ptr != MAP_FAILED);
         node_map_ptr = reinterpret_cast<data_node*>(reinterpret_cast<char*>(node_map_ptr) + misalignment);
 
-        m_nodes = NodeVector<data_node>(node_map_ptr, fixed_sigma);
+        m_nodes = CustomVector<data_node>(node_map_ptr, fixed_sigma);
+        
+        // std::cout << "mmap-ed m_node ptr: " << node_map_ptr << std::endl;
+
+        // std::cout << "m_nodes[0] bv_pos: " << m_nodes[0].bv_pos << std::endl;
+        // m_nodes = CustomVector<data_node>(node_map_ptr, fixed_sigma);
+
+        // off_t aligned_pos_leaf = ((pos + node_map_size) / page_size) * page_size;
+        // off_t misalignment_leaf = pos + node_map_size - aligned_pos_leaf;
+
+        // size_t c_to_leaf_map_size = fixed_sigma * sizeof(node_type);
+        // node_type* c_to_leaf_ptr = static_cast<node_type*>(mmap(nullptr, c_to_leaf_map_size, PROT_READ, MAP_PRIVATE, fd, aligned_pos_leaf));
+        // assert (c_to_leaf_ptr != MAP_FAILED);
+        // c_to_leaf_ptr = reinterpret_cast<node_type*>(reinterpret_cast<char*>(c_to_leaf_ptr) + misalignment_leaf);
+        // m_c_to_leaf = CustomVector<node_type>(c_to_leaf_ptr, fixed_sigma);
+        // // std::cout << pos + c_to_leaf_map_size << std::endl;
+
+        // off_t aligned_pos_path = ((pos + node_map_size + c_to_leaf_map_size) / page_size) * page_size;
+        // off_t misalignment_path = pos + node_map_size + c_to_leaf_map_size - aligned_pos_path;
+
+        // size_t path_map_size = fixed_sigma * sizeof(uint64_t);
+        // uint64_t* path_ptr = static_cast<uint64_t*>(mmap(nullptr, path_map_size, PROT_READ, MAP_PRIVATE, fd, aligned_pos_path));
+        // assert (path_ptr != MAP_FAILED);
+        // path_ptr = reinterpret_cast<uint64_t*>(reinterpret_cast<char*>(path_ptr) + misalignment_path);
+        // m_path = CustomVector<uint64_t>(path_ptr, fixed_sigma);
+        // // std::cout << pos + c_to_leaf_map_size + path_map_size << std::endl;
         
         close(fd);
         
-        auto offset = node_map_size;
+        auto offset = node_map_size; // + c_to_leaf_map_size + path_map_size;
         in.seekg(offset + pos);
+        // std::cout << "pos after mmap " << in.tellg() << std::endl;
 
-        in.read((char*) m_c_to_leaf, fixed_sigma*sizeof(m_c_to_leaf[0]));
-        in.read((char*) m_path, fixed_sigma*sizeof(m_path[0]));
+        in.read((char*) m_c_to_leaf, fixed_sigma*sizeof(m_c_to_leaf[0])); // 256 * 2
+        in.read((char*) m_path, fixed_sigma*sizeof(m_path[0])); // 256 * 8
     }
 
     //! Get corresponding leaf for symbol c.

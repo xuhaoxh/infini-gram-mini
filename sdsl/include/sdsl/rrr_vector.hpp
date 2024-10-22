@@ -372,6 +372,16 @@ class rrr_vector
             m_invert.load(in);
         }
 
+        void load_(std::istream& in, const std::string& path)
+        {
+            read_member(m_size, in);
+            m_bt.load_(in, path);
+            m_btnr.load_(in, path);
+            m_btnrp.load_(in, path);
+            m_rank.load_(in, path);
+            m_invert.load_(in, path);
+        }
+
         iterator begin() const
         {
             return iterator(this, 0);
@@ -444,6 +454,7 @@ class rank_support_rrr
         */
         const size_type rank(size_type i)const
         {
+            // std::cout << "rank() i: " << i << ", m_v->size(): " << m_v->size() << std::endl;
             assert(m_v != nullptr);
             assert(i <= m_v->size());
             size_type bt_idx = i/t_bs;

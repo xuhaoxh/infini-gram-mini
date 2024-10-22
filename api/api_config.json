@@ -1,6 +1,7 @@
 [
     {
         "name": "pileval",
-        "dir": "/data_piletrain/pileval"
+        "dir": "/data_piletrain/pileval",
+        "load_to_ram": "false"
     }
 ]

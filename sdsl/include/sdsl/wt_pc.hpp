@@ -682,6 +682,18 @@ class wt_pc
             m_tree.load(in);
         }
 
+        //! Loads the data structure from the given istream and file path.
+        void load_(std::istream& in, const std::string& path)
+        {
+            read_member(m_size, in);
+            read_member(m_sigma, in);
+            m_bv.load_(in, path);
+            m_bv_rank.load(in, &m_bv);
+            m_bv_select1.load(in, &m_bv);
+            m_bv_select0.load(in, &m_bv);
+            m_tree.load(in);
+        }
+
         //! Random access container to bitvector of node v
         auto bit_vec(const node_type& v) const -> node_bv_container<t_bitvector> {
             return node_bv_container<t_bitvector>(begin(v), end(v));

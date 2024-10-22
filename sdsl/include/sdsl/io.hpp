@@ -171,6 +171,14 @@ void load(std::vector<X>& x, std::istream& in)
 template<class T>
 bool load_from_file(T& v, const std::string& file);
 
+//! Customize load sdsl-object v from a file.
+/*!
+ * \param v sdsl-
+ * \param file Name of the serialized file.
+ */
+template<class T>
+bool load_from_file_(T& v, const std::string& file);
+
 //! Load an int_vector from a plain array of `num_bytes`-byte integers with X in \{0, 1,2,4,8\} from disk.
 // TODO: Remove ENDIAN dependency.
 template<class t_int_vec>
@@ -737,6 +745,24 @@ bool load_from_file(T& v, const std::string& file)
         return false;
     }
     load(v, in);
+    in.close();
+    if (util::verbose) {
+        std::cerr << "Load file `" << file << "`" << std::endl;
+    }
+    return true;
+}
+
+template<class T>
+bool load_from_file_(T& v, const std::string& file)
+{
+    isfstream in(file, std::ios::binary | std::ios::in);
+    if (!in) {
+        if (util::verbose) {
+            std::cerr << "Could not load file `" << file << "`" << std::endl;
+        }
+        return false;
+    }
+    v.load_(in, file); // to csa_wt
     in.close();
     if (util::verbose) {
         std::cerr << "Load file `" << file << "`" << std::endl;

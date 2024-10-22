@@ -16,6 +16,7 @@
 using namespace std;
 using namespace sdsl;
 namespace fs = std::filesystem;
+using namespace chrono;
 
 typedef unsigned long size_t;
 typedef unsigned long char_t;
@@ -61,15 +62,13 @@ public:
             }
             sort(id_paths.begin(), id_paths.end());
 
+            auto start_time = high_resolution_clock::now();
+
             for (size_t s = 0; s < id_paths.size(); s++) {
                 threads.emplace_back([this, id_path = id_paths[s]]() {
                     auto [fm_index, index_size] = load_file(id_path);
                     auto shard = FMIndexShard{id_path, fm_index, index_size};
 
-                    // auto fm_index = new csa_wt<wt_huff<rrr_vector<127>>, 512, 1024>();
-                    // load_from_file(*fm_index, id_path);
-                    // auto shard = FMIndexShard{id_path, fm_index, fm_index->size()};
-                    
                     lock_guard<mutex> lock(mtx);
                     _shards.push_back(shard);
                 });
@@ -80,6 +79,10 @@ public:
                     thread.join();
                 }
             }
+
+            auto end_time = high_resolution_clock::now();
+            auto load_time = duration_cast<milliseconds>(end_time - start_time).count();
+            cout << "Load time: " << load_time / 1000.00 << " s." << endl;
 
             _num_shards = _shards.size();
             assert(_num_shards > 0);
@@ -101,21 +104,14 @@ public:
         if (_load_to_ram) {
             auto fm_index = new index_t();
             load_from_file(*fm_index, path);
+            // cout << "Size loaded (to ram): " << sizeof(*fm_index) << "bytes." << endl;
             return {fm_index, fm_index->size()};
         } else {
             auto fm_index = new index_t();
             load_from_file_(*fm_index, path);
+            // cout << "size loaded (on disk): " << sizeof(*fm_index) << "bytes." << endl;
+            // cout << "Index size: " << fm_index->size() << endl;
             return {fm_index, fm_index->size()};
-            // int f = open(path.c_str(), O_RDONLY);
-            // assert (f != -1);
-            // struct stat s;
-            // assert (fstat(f, &s) != -1);
-            // index_t* ptr = static_cast<index_t*>(mmap(NULL, s.st_size, PROT_READ, MAP_PRIVATE, f, 0));
-            // assert (ptr != MAP_FAILED);
-            // madvise(ptr, s.st_size, MADV_RANDOM);
-            // close(f);
-
-            // return {ptr, s.st_size};
         }
     }
 
@@ -131,6 +127,9 @@ public:
 
         for (size_t i = 0; i < _num_shards; ++i) {
             threads.emplace_back(&Engine::_count, this, _shards[i], query, &count_by_shards[i], &lo_by_shards[i]);
+            // threads.emplace_back([&, i]() {
+            //     Engine::_count(_shards[i], query, &count_by_shards[i], &lo_by_shards[i]);
+            // });
         }
 
         for (auto& t : threads) {
@@ -146,9 +145,6 @@ public:
     void _count(FMIndexShard fm_index, const string& query, size_t* out_count, size_t* out_lo) {
         size_t lo = 0;
         size_t hi = 0;
-
-        // auto index = *fm_index.fmIndex;
-        // cout << fm_index.fmIndex->char2comp.size() << endl;
         
         auto counts = sdsl::backward_search(*fm_index.fmIndex, 0, fm_index.size - 1, query.begin(), query.end(), lo, hi);
         *out_count = counts;

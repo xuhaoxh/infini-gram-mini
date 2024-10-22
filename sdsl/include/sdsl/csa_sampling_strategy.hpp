@@ -669,6 +669,12 @@ class _isa_sampling : public int_vector<t_width>
             base_type::load(in);
         }
 
+        //! Load sampling
+        void load_(std::istream& in, const std::string& path, SDSL_UNUSED const sa_type* sa_sample=nullptr)
+        {
+            base_type::load_(in, path);
+        }
+
         void set_vector(SDSL_UNUSED const sa_type*) {}
 };
 

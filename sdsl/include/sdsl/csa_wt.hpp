@@ -259,6 +259,11 @@ class csa_wt
          */
         void load(std::istream& in);
 
+        //! Custom load function.
+        /*! \param in Input stream to load the data structure from.
+         */
+        void load_(std::istream& in, const std::string& path);
+
     private:
 
         // Calculates how many symbols c are in the prefix [0..i-1] of the BWT of the original text.
@@ -389,6 +394,15 @@ void csa_wt<t_wt, t_dens, t_inv_dens, t_sa_sample_strat, t_isa, t_alphabet_strat
     m_wavelet_tree.load(in);
     m_sa_sample.load(in);
     m_isa_sample.load(in, &m_sa_sample);
+    m_alphabet.load(in);
+}
+
+template<class t_wt, uint32_t t_dens, uint32_t t_inv_dens, class t_sa_sample_strat, class t_isa, class t_alphabet_strat>
+void csa_wt<t_wt, t_dens, t_inv_dens, t_sa_sample_strat, t_isa, t_alphabet_strat>::load_(std::istream& in, const std::string& path)
+{
+    m_wavelet_tree.load_(in, path);
+    m_sa_sample.load_(in, path);
+    m_isa_sample.load_(in, path, &m_sa_sample);
     m_alphabet.load(in);
 }
 

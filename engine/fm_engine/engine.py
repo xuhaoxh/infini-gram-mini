@@ -6,7 +6,7 @@ from .cpp_engine import Engine
 
 class FmIndexEngine:
     
-    def __init__(self, index_dir: Iterable[str] | str) -> None:
+    def __init__(self, index_dir: Iterable[str] | str, load_to_ram: bool) -> None:
         
         assert sys.byteorder == 'little', 'This code is designed to run on little-endian machines only!'
 
@@ -14,7 +14,7 @@ class FmIndexEngine:
             index_dir = [index_dir]
         assert type(index_dir) == list and all(type(d) == str for d in index_dir)
 
-        self.engine = Engine(index_dir)
+        self.engine = Engine(index_dir, load_to_ram)
     
     def count(self, query) -> FmEngineResponse[CountResponse]:
         result = self.engine.count(query)

@@ -484,6 +484,9 @@ class int_vector
         //! Load the int_vector for a stream.
         void load(std::istream& in);
 
+        //! On-disk version of loading the int_vector for a stream.
+        void load_(std::istream& in, const std::string& path);
+
         //! non const version of [] operator
         /*! \param i Index the i-th integer of length width().
          *  \return A reference to the i-th integer of length width().
@@ -1592,6 +1595,29 @@ void int_vector<t_width>::load(std::istream& in)
         idx += conf::SDSL_BLOCK_SIZE;
     }
     in.read((char*) p, ((capacity()>>6)-idx)*sizeof(uint64_t));
+}
+
+template<uint8_t t_width>
+void int_vector<t_width>::load_(std::istream& in, const std::string& path)
+{
+    size_type size;
+    int_vector<t_width>::read_header(size, m_width, in);
+    m_size = size;
+
+    auto pos = in.tellg();
+    int fd = open(path.c_str(), O_RDONLY);
+    assert (fd != -1);
+
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    off_t aligned_pos = (pos / page_size) * page_size;
+    off_t misalignment = pos - aligned_pos;
+
+    uint64_t* data_map_ptr = static_cast<uint64_t*>(mmap(nullptr, ((size + 63) / 64) * sizeof(uint64_t), PROT_READ, MAP_PRIVATE, fd, aligned_pos));
+    assert (data_map_ptr != MAP_FAILED);
+    m_data = reinterpret_cast<uint64_t*>(reinterpret_cast<char*>(data_map_ptr) + misalignment);
+    
+    close(fd);
+    in.seekg(((size + 63) / 64) * sizeof(uint64_t) + pos);
 }
 
 }// end namespace sdsl
