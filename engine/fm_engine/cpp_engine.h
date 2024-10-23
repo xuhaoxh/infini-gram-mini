@@ -104,13 +104,10 @@ public:
         if (_load_to_ram) {
             auto fm_index = new index_t();
             load_from_file(*fm_index, path);
-            // cout << "Size loaded (to ram): " << sizeof(*fm_index) << "bytes." << endl;
             return {fm_index, fm_index->size()};
         } else {
             auto fm_index = new index_t();
             load_from_file_(*fm_index, path);
-            // cout << "size loaded (on disk): " << sizeof(*fm_index) << "bytes." << endl;
-            // cout << "Index size: " << fm_index->size() << endl;
             return {fm_index, fm_index->size()};
         }
     }
@@ -127,9 +124,6 @@ public:
 
         for (size_t i = 0; i < _num_shards; ++i) {
             threads.emplace_back(&Engine::_count, this, _shards[i], query, &count_by_shards[i], &lo_by_shards[i]);
-            // threads.emplace_back([&, i]() {
-            //     Engine::_count(_shards[i], query, &count_by_shards[i], &lo_by_shards[i]);
-            // });
         }
 
         for (auto& t : threads) {
@@ -174,7 +168,12 @@ public:
         }
         offset = num_occ - num_occ_prev;
 
-        size_t location = (*_shards[shard_num].fmIndex)[lo_by_shard[shard_num] + offset - 1];
+        // size_t location = (*_shards[shard_num].fmIndex)[lo_by_shard[shard_num] + offset - 1]; 
+        if (temp_path != _shards[shard_num].path) {
+            temp_path = _shards[shard_num].path;
+            load_from_file(temp_index, temp_path);
+        }
+        size_t location = temp_index[lo_by_shard[shard_num] + offset - 1]; 
 
         return LocateResult{location, shard_num};
     }
@@ -188,7 +187,8 @@ public:
             return {"", SIZE_MAX};
         }
 
-        auto s = sdsl::extract(*_shards[shard_num].fmIndex, location - pre_text, location + query.length() + post_text);
+        // auto s = sdsl::extract(*_shards[shard_num].fmIndex, location - pre_text, location + query.length() + post_text);
+        auto s = sdsl::extract(temp_index, location - pre_text, location + query.length() + post_text);
         auto pos = s.find("ÿ");
         while (pos != std::string::npos) {
             if (pos > pre_text) {
@@ -242,4 +242,6 @@ private:
     size_t _num_shards;
     bool _load_to_ram;
     mutex mtx;
+    index_t temp_index;
+    string temp_path;
 };
