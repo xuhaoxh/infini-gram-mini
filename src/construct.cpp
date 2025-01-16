@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <chrono>
 #include <filesystem>
-#include </data/jiachengl/hf-fm/nlohmann/json.hpp> // TODO: modify path
+#include "../nlohmann/json.hpp" // TODO: modify path
 
 using namespace sdsl;
 using namespace std;
@@ -117,8 +117,8 @@ int construct(string index_dir, string path) {
 }
 
 int main(int argc, char** argv) {
-    if (argc !=  2) {
-        cerr << "Usage: " << argv[0] << " [directory or file path]" << endl;
+    if (argc != 3) {
+        cerr << "Usage: " << argv[0] << " [directory or file path] [directory to write index]" << endl;
         return 1;
     }
 
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    string index_directory = "../indexes/";
+    string index_directory = argv[2];
     if (!fs::exists(index_directory)) {
         cout << "Creating indexes folder..." << endl;
         fs::create_directories(index_directory);

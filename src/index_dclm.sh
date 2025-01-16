@@ -13,6 +13,7 @@ gantry run \
   --budget ai2/oe-training \
   --beaker-image petew/olmo-torch23-gantry \
   --cluster ai2/neptune-cirrascale \
+  --cluster ai2/ceres-cirrascale \
   --priority high \
   --no-nfs \
   --weka oe-training-default:/weka/oe-training-default \
@@ -20,6 +21,7 @@ gantry run \
   --cpus 4 \
   --memory 150GiB \
   --shared-memory 10GiB \
+  --env-secret GITHUB_TOKEN=GITHUB_TOKEN_HF \
   --no-python \
   --yes \
   -- /bin/bash -c "\
