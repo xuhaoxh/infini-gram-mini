@@ -4,7 +4,7 @@ import zstandard as zstd
 
 input_dir = '/weka/oe-data-default/ai2-llm/pretraining-data/sources/olmo-mix/olmoe-mix-0924/data/dclm'
 raw_dir = '/weka/oe-training-default/jiachengl/hf-fm/dclm/raw'
-index_dir = '/weka/oe-training-default/jiachengl/hf-fm/dclm/index'
+index_dir = '/weka/oe-training-default/jiachengl/hf-fm/dclm/index/'
 NUM_FILES_PER_SHARD = int(sys.argv[1])
 TOTAL_FILES = 1970
 NUM_SHARDS = int(sys.argv[2])

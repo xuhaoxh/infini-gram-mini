@@ -25,6 +25,8 @@ gantry run \
   --no-python \
   --yes \
   -- /bin/bash -c "\
+    set -exuo pipefail; \
+    IFS=$'\n\t'; \
     conda shell.bash activate base; \
     conda install gxx=11.2.0 -c conda-forge; \
     pip install zstandard; \
