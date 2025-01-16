@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <chrono>
 #include <filesystem>
-#include </mmfs1/gscratch/h2lab/xuhao/fm-engine/nlohmann/json.hpp> // TODO: modify path
+#include </data/jiachengl/hf-fm/nlohmann/json.hpp> // TODO: modify path
 
 using namespace sdsl;
 using namespace std;
@@ -24,7 +24,7 @@ int process(const string index_dir, const string path) {
     string offset_file = index_dir + name + "_offset.bin";
     string metaoffset_file = index_dir + name + "_metaoffset.bin";
     const string separator = "\xff";
-    
+
     ifstream input(input_file);
     ofstream text_output(text_file, ios::app | ios::binary);
     ofstream meta_output(meta_file, ios::app | ios::binary);
@@ -58,13 +58,13 @@ int process(const string index_dir, const string path) {
 
     size_t final_meta_pos = static_cast<size_t>(meta_output.tellp());
     metaoffset_output.write(reinterpret_cast<const char*>(&final_meta_pos), sizeof(size_t));
-    
+
     auto end = high_resolution_clock::now();
     memory_monitor::stop();
 
     auto duration = duration_cast<milliseconds>(end - start);
     cout << "Time taken for processing text: " << duration.count() / 1000.00 << " s" << endl;
-    
+
     return 0;
 }
 

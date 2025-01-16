@@ -1,0 +1,10 @@
+name: hf-fm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11.8
+  - gxx=11.2.0
+  - pip:
+    - beaker-gantry
+    - zstandard
