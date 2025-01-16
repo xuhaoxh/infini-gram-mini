@@ -340,8 +340,12 @@ struct traverse_csa_wt_traits<t_csa,false> {
     typedef typename t_csa::size_type size_type;
     static value_type access(const t_csa& csa,size_type i)
     {
+        auto start_time = std::chrono::high_resolution_clock::now();
         typename t_csa::char_type c;
         auto rc = csa.wavelet_tree.inverse_select(i);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto load_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+        // std::cout << "Access time for csa.wavelet_tree.inverse_select(i): " << load_time << " ms." << std::endl;
         size_type j = rc.first;
         c = rc.second;
         return csa.C[ csa.char2comp[c] ] + j;
@@ -502,14 +506,19 @@ class isa_of_csa_wt
             assert(i < size());
             auto sample = m_csa.isa_sample.sample_qeq(i);
             value_type result = std::get<0>(sample);
+            
             if (std::get<1>(sample) < i) {
                 i = std::get<1>(sample) + m_csa.size() - i;
             } else {
                 i = std::get<1>(sample) - i;
             }
+            auto start_time_lf = std::chrono::high_resolution_clock::now();
             while (i--) {
                 result = m_csa.lf[result];
             }
+            auto end_time_lf = std::chrono::high_resolution_clock::now();
+            auto load_time_lf = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_lf - start_time_lf).count();
+            // std::cout << "Access time for lf in isa_of_csa_wt: " << load_time_lf << " ms." << std::endl;
             return result;
         }
 

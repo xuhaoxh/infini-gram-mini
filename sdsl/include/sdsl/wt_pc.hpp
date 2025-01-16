@@ -91,6 +91,7 @@ class wt_pc
         select_1_type    m_bv_select1;   // select support for the wavelet tree bit vector
         select_0_type    m_bv_select0;
         tree_strat_type  m_tree;
+        // std::vector<std::vector<size_type>> m_prefetch_nodes;
 
         void copy(const wt_pc& wt)
         {
@@ -104,6 +105,7 @@ class wt_pc
             m_bv_select0    = wt.m_bv_select0;
             m_bv_select0.set_vector(&m_bv);
             m_tree          = wt.m_tree;
+            // m_prefetch_nodes  = wt.m_prefetch_nodes;
         }
 
         // insert a character into the wavelet tree, see construct method
@@ -182,6 +184,24 @@ class wt_pc
                 }
             }
         }
+
+        // Recursively retrieve descendant nodes up
+        // void get_descendants(size_type node, std::vector<size_type>& descendants, size_type level) {
+        //     if (level == 0) {
+        //         return;
+        //     }
+        //     size_type left_child m_tree.child(node, 0);
+        //     size_type right_child m_tree.child(node, 1);
+
+        //     if (left_child < m_tree.size()) {
+        //         descendants.push_back(left_child);
+        //         get_descendants(left_child, descendants, level-1);
+        //     }
+        //     if (right_child < m_tree.size()) {
+        //         descendants.push_back(right_child);
+        //         get_descendants(right_child, descendants, level-1);
+        //     }
+        // }
 
     public:
 
@@ -396,10 +416,24 @@ class wt_pc
         std::pair<size_type, value_type>
         inverse_select(size_type i)const
         {
+            // std::cout << i << std::endl;
             assert(i < size());
             node_type v = m_tree.root();
             while (!m_tree.is_leaf(v)) {   // while not a leaf
-                if (m_bv[m_tree.bv_pos(v) + i]) {   //  goto right child
+                auto start_time = std::chrono::high_resolution_clock::now();
+                auto node = m_bv[m_tree.bv_pos(v) + i];
+                auto end_time = std::chrono::high_resolution_clock::now();
+                auto load_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+                // std::cout << "Access time for m_bv[]: " << load_time << " ms." << std::endl;
+
+                auto start_time_ = std::chrono::high_resolution_clock::now();
+                auto rank = m_bv_rank(m_tree.bv_pos(v) + i);
+                // std::cout << "rank: " << rank << std::endl;
+                auto end_time_ = std::chrono::high_resolution_clock::now();
+                auto load_time_ = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_ - start_time_).count();
+                // std::cout << "Access time for m_bv_rank[]: " << load_time_ << " ms." << std::endl;
+                
+                if (node) {   //  goto right child
                     i = (m_bv_rank(m_tree.bv_pos(v) + i)
                          - m_tree.bv_pos_rank(v));
                     v = m_tree.child(v, 1);

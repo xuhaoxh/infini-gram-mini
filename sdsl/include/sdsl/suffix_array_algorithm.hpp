@@ -596,13 +596,30 @@ typename t_csa::size_type extract(
     assert(begin <= end);
     auto steps = end-begin+1;
     if (steps > 0) {
+        // std::cout << "Start isa in extract......" << std::endl;
+        auto start_time_isa = std::chrono::high_resolution_clock::now();
         auto order = csa.isa[end];
+        auto end_time_isa = std::chrono::high_resolution_clock::now();
+        auto load_time_isa = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_isa - start_time_isa).count();
+        // std::cout << "Access time for isa in extract: " << load_time_isa << " ms." << std::endl;
+        
+        auto start_time_frs = std::chrono::high_resolution_clock::now();
         text[--steps] = first_row_symbol(order, csa);
+        auto end_time_frs = std::chrono::high_resolution_clock::now();
+        auto load_time_frs = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_frs - start_time_frs).count();
+        // std::cout << "Access time for first_row_symbol in extract: " << load_time_frs << " ms." << std::endl;
+
         while (steps != 0) {
+            auto start_time = std::chrono::high_resolution_clock::now();
             auto rc = csa.wavelet_tree.inverse_select(order);
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto load_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+            // std::cout << "Access time for inverse_select in extract: " << load_time << " ms." << std::endl;
             auto j = rc.first;
             auto c = rc.second;
-            order = csa.C[ csa.char2comp[c] ] + j;
+            order = csa.C[ csa.char2comp[c] ];
+            // std::cout << "order: " << order << ", j: " << j << std::endl;
+            order += j;
             text[--steps] = c;
         }
     }

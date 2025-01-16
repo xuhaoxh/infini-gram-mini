@@ -36,7 +36,8 @@ template<class int_vector>
 bool contains_no_zero_symbol(const int_vector& text, const std::string& file)
 {
     for (int_vector_size_type i=0; i < text.size(); ++i) {
-        if ((uint64_t)0 == text[i]) {
+        // if ((uint64_t)0 == text[i]) {
+        if ((uint64_t)'\xfa' == text[i]) {
             throw std::logic_error(std::string("Error: File \"")+file+"\" contains zero symbol.");
             return false;
         }
@@ -144,7 +145,6 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
             construct_sa<t_index::alphabet_category::WIDTH>(config);
         }
         register_cache_file(conf::KEY_SA, config);
-        // std::cout << "Max memory usage for SA construction: " << memory_monitor::peak() << " bytes." << std::endl;
     }
     {
         //  (3) construct BWT
@@ -153,7 +153,6 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
             construct_bwt<t_index::alphabet_category::WIDTH>(config);
         }
         register_cache_file(KEY_BWT, config);
-        // std::cout << "Max memory usage for BWT construction: " << memory_monitor::peak() << " bytes." << std::endl;
     }
     {
         //  (4) use BWT to construct the CSA

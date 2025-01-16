@@ -12,7 +12,11 @@ PYBIND11_MODULE(cpp_engine, m) {
     py::class_<FMIndexShard>(m, "FMIndexShard")
         .def_readwrite("path", &FMIndexShard::path)
         .def_readwrite("fmIndex", &FMIndexShard::fmIndex)
-        .def_readwrite("size", &FMIndexShard::size);
+        .def_readwrite("size", &FMIndexShard::size)
+        .def_readwrite("offset", &FMIndexShard::offset)
+        .def_readwrite("meta_offset", &FMIndexShard::meta_offset)
+        .def_readwrite("num_offsets", &FMIndexShard::num_offsets)
+        .def_readwrite("metadata", &FMIndexShard::metadata);
 
     py::class_<CountResult>(m, "CountResult")
         .def_readwrite("count", &CountResult::count)
@@ -25,10 +29,11 @@ PYBIND11_MODULE(cpp_engine, m) {
 
     py::class_<ReconstructResult>(m, "ReconstructResult")
         .def_readwrite("text", &ReconstructResult::text)
-        .def_readwrite("shard_num", &ReconstructResult::shard_num);
+        .def_readwrite("shard_num", &ReconstructResult::shard_num)
+        .def_readwrite("metadata", &ReconstructResult::metadata);
 
     py::class_<Engine>(m, "Engine")
-        .def(py::init<const vector<string>, bool>())
+        .def(py::init<const vector<string>, bool, bool>())
         .def("count", &Engine::count, "query"_a)
         .def("locate", &Engine::locate, "query"_a, "num_occ"_a)
         .def("reconstruct", &Engine::reconstruct, "query"_a, "num_occ"_a, "pre_text"_a, "post_text"_a);

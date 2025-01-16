@@ -18,4 +18,5 @@ class LocateResponse(TypedDict):
 class ReconstructResponse(TypedDict):
     text: str
     shard_num: int
+    metadata: str
 
