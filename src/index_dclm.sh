@@ -2,7 +2,7 @@
 
 set -ex
 
-RUN_NAME="fm_dclm_n1_s1"
+RUN_NAME="fm_dclm_f20_s1"
 
 gantry run \
   --allow-dirty \
@@ -19,7 +19,7 @@ gantry run \
   --weka oe-training-default:/weka/oe-training-default \
   --weka oe-data-default:/weka/oe-data-default \
   --cpus 4 \
-  --memory 150GiB \
+  --memory 1912GiB \
   --shared-memory 10GiB \
   --env-secret GITHUB_TOKEN=GITHUB_TOKEN_HF \
   --no-python \
@@ -32,5 +32,5 @@ gantry run \
     pip install zstandard; \
     cd src; \
     g++ -std=c++17 -I../sdsl/include -L../sdsl/lib construct.cpp -o construct -lsdsl -ldivsufsort -ldivsufsort64; \
-    python index_dclm.py 1 1; \
+    python index_dclm.py 20 1; \
     "
