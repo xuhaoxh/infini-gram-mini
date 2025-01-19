@@ -73,7 +73,7 @@ int construct(string index_dir, string path) {
     string index_file = file_path + ".fm9";
     string meta_index_file = file_path + "_meta.fm";
     csa_wt<wt_huff<rrr_vector<127> >, 32, 64> fm_index;
-    csa_wt<wt_huff<rrr_vector<127> >, 8, 16> metadata_index;
+    csa_wt<wt_huff<rrr_vector<127> >, 32, 64> metadata_index;
 
     if (!load_from_file(fm_index, index_file)) {
         ifstream in(file_path + ".text");
@@ -85,7 +85,8 @@ int construct(string index_dir, string path) {
 
         memory_monitor::start();
         auto start = high_resolution_clock::now();
-        construct(fm_index, file_path + ".text", 1);
+        sdsl::cache_config config(true, index_dir);
+        construct(fm_index, file_path + ".text", config, 1);
         auto end = high_resolution_clock::now();
         memory_monitor::stop();
 
@@ -104,7 +105,8 @@ int construct(string index_dir, string path) {
 
         memory_monitor::start();
         auto meta_start = high_resolution_clock::now();
-        construct(metadata_index, file_path + "_meta", 1);
+        sdsl::cache_config config(true, index_dir);
+        construct(metadata_index, file_path + "_meta", config, 1);
         store_to_file(metadata_index, meta_index_file);
         auto meta_end = high_resolution_clock::now();
         memory_monitor::stop();
