@@ -3,6 +3,7 @@ import time
 import os
 import zstandard as zstd
 
+NUM_PROCESSES = 16
 TOTAL_NUM_FILES = 1970
 NUM_FILES_PER_SHARD = 1
 input_dir = '/weka/oe-data-default/ai2-llm/pretraining-data/sources/olmo-mix/olmoe-mix-0924/data/dclm'
@@ -29,7 +30,7 @@ def index_shard(shard_ix):
     os.remove(f'{output_dir}/data_{shard_ix:04d}/data_{shard_ix:04d}.text')
     os.remove(f'{output_dir}/data_{shard_ix:04d}/data_{shard_ix:04d}_meta')
 
-with mp.get_context('fork').Pool(20 // NUM_FILES_PER_SHARD) as p:
+with mp.get_context('fork').Pool(NUM_PROCESSES // NUM_FILES_PER_SHARD) as p:
     # p.map(index_shard, list(range(TOTAL_NUM_FILES // NUM_FILES_PER_SHARD)))
     results = []
     for i in range(TOTAL_NUM_FILES // NUM_FILES_PER_SHARD):
