@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import time
 import os
 import zstandard as zstd
 
@@ -29,4 +30,11 @@ def index_shard(shard_ix):
     os.remove(f'{output_dir}/data_{shard_ix:04d}/data_{shard_ix:04d}_meta')
 
 with mp.get_context('fork').Pool(20 // NUM_FILES_PER_SHARD) as p:
-    p.map(index_shard, list(range(TOTAL_NUM_FILES // NUM_FILES_PER_SHARD)))
+    # p.map(index_shard, list(range(TOTAL_NUM_FILES // NUM_FILES_PER_SHARD)))
+    results = []
+    for i in range(TOTAL_NUM_FILES // NUM_FILES_PER_SHARD):
+        result = p.apply_async(index_shard, args=(i,))
+        results.append(result)
+        time.sleep(0.1)
+    p.close()
+    p.join()
