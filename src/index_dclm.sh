@@ -2,8 +2,7 @@
 
 set -ex
 
-SHARD_IX=$1
-RUN_NAME="fm_dclm_f1_${SHARD_IX}"
+RUN_NAME="fm_dclm_f1_all"
 
 gantry run \
   --allow-dirty \
@@ -19,8 +18,8 @@ gantry run \
   --no-nfs \
   --weka oe-training-default:/weka/oe-training-default \
   --weka oe-data-default:/weka/oe-data-default \
-  --cpus 4 \
-  --memory 95GiB \
+  --cpus 186 \
+  --memory 1912GiB \
   --shared-memory 10GiB \
   --env-secret GITHUB_TOKEN=GITHUB_TOKEN_HF \
   --no-python \
@@ -33,5 +32,5 @@ gantry run \
     pip install zstandard; \
     cd src; \
     g++ -std=c++17 -I../sdsl/include -L../sdsl/lib construct.cpp -o construct -lsdsl -ldivsufsort -ldivsufsort64; \
-    python index_dclm.py ${SHARD_IX}; \
+    python index_dclm.py; \
     "
