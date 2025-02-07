@@ -50,8 +50,8 @@ int process(const string index_dir, const string path) {
         metaoffset_output.write(reinterpret_cast<const char*>(&current_meta_pos), sizeof(size_t));
 
         // entry["meta"] for pile, entry["metadata"] for DCLM
-        // meta_output << entry["meta"].dump() << separator;
-        meta_output << entry["metadata"].dump() << separator;
+        meta_output << entry["meta"].dump() << separator;
+        // meta_output << entry["metadata"].dump() << separator;
     }
     size_t final_text_pos = static_cast<size_t>(text_output.tellp());
     offset_output.write(reinterpret_cast<const char*>(&final_text_pos), sizeof(size_t));
@@ -73,7 +73,7 @@ int construct(string index_dir, string path) {
     string index_file = file_path + ".fm9";
     string meta_index_file = file_path + "_meta.fm";
     csa_wt<wt_huff<rrr_vector<127> >, 32, 64> fm_index;
-    csa_wt<wt_huff<rrr_vector<127> >, 8, 16> metadata_index;
+    csa_wt<wt_huff<rrr_vector<127> >, 32, 64> metadata_index;
 
     if (!load_from_file(fm_index, index_file)) {
         ifstream in(file_path + ".text");

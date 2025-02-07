@@ -5,10 +5,10 @@
 #include <chrono>
 
 int main() {
-    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/val"}, false, true);
+    auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-val"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/dclm-0000"}, false, true);
-    auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/test"}, false, true);
-    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-train"}, false);
+    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/test"}, false, true);
+    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-train"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-val-512"}, false);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-val"}, false);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-train-0"}, false);

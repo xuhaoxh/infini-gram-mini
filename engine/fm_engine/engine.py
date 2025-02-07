@@ -6,7 +6,7 @@ from .cpp_engine import Engine
 
 class FmIndexEngine:
     
-    def __init__(self, index_dir: Iterable[str] | str, load_to_ram: bool) -> None:
+    def __init__(self, index_dir: Iterable[str] | str, load_to_ram: bool, get_metadata: bool) -> None:
         
         assert sys.byteorder == 'little', 'This code is designed to run on little-endian machines only!'
 
@@ -14,7 +14,7 @@ class FmIndexEngine:
             index_dir = [index_dir]
         assert type(index_dir) == list and all(type(d) == str for d in index_dir)
 
-        self.engine = Engine(index_dir, load_to_ram)
+        self.engine = Engine(index_dir, load_to_ram, get_metadata)
     
     def count(self, query) -> FmEngineResponse[CountResponse]:
         result = self.engine.count(query)
@@ -26,13 +26,5 @@ class FmIndexEngine:
     
     def reconstruct(self, query, num_occ, pre_text, post_text) -> FmEngineResponse[ReconstructResponse]:
         result = self.engine.reconstruct(query, num_occ, pre_text, post_text)
-        return {'text': result.text, 'shard_num': result.shard_num}
-    
-    # def locate(self, query, num_occ, count_by_shards):
-    #     result = self.engine.locate(query, num_occ, count_by_shards)
-    #     return {'location': result.location, 'shard_num': result.shard_num}
-    
-    # def reconstruct(self, location, shard_num, query_len):
-    #     result = self.engine.reconstruct(location, shard_num, query_len)
-    #     return {'text': result.text, 'location': result.shard_num}
-
+        return {'text': result.text, 'shard_num': result.shard_num, 'metadata': result.metadata}
+        
