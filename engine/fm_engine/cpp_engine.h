@@ -25,6 +25,7 @@ using namespace chrono;
 typedef unsigned long size_t;
 typedef unsigned long char_t;
 
+// typedef csa_wt<wt_huff<rrr_vector<127>>, 512, 1024> index_t;
 typedef csa_wt<wt_huff<rrr_vector<127>>, 32, 64> index_t;
 typedef csa_wt<wt_huff<rrr_vector<127>>, 32, 64> meta_index_t;
 

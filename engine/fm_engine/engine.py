@@ -26,5 +26,6 @@ class FmIndexEngine:
     
     def reconstruct(self, query, num_occ, pre_text, post_text) -> FmEngineResponse[ReconstructResponse]:
         result = self.engine.reconstruct(query, num_occ, pre_text, post_text)
+        # print(f"reconstructed text: {result.text}")
         return {'text': result.text, 'shard_num': result.shard_num, 'metadata': result.metadata}
         

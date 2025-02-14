@@ -372,7 +372,7 @@ struct _byte_tree {
         off_t aligned_pos = (pos / page_size) * page_size;
         off_t misalignment = pos - aligned_pos;
 
-        size_t node_map_size  = m_nodes_size * 22;
+        size_t node_map_size  = m_nodes_size * sizeof(data_node);
         data_node* node_map_ptr = static_cast<data_node*>(mmap(nullptr, node_map_size, PROT_READ, MAP_PRIVATE, fd, aligned_pos));
         assert (node_map_ptr != MAP_FAILED);
         node_map_ptr = reinterpret_cast<data_node*>(reinterpret_cast<char*>(node_map_ptr) + misalignment);

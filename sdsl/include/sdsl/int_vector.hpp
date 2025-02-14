@@ -1614,12 +1614,12 @@ void int_vector<t_width>::load_(std::istream& in, const std::string& path)
 
     size_t map_size = ((size + 63) / 64) * sizeof(uint64_t);
     
-    uint64_t* data_map_ptr = static_cast<uint64_t*>(mmap(nullptr, map_size, PROT_READ, MAP_PRIVATE, fd, aligned_pos));
+    void* data_map_ptr = mmap(nullptr, map_size + misalignment, PROT_READ, MAP_PRIVATE, fd, aligned_pos);
     assert (data_map_ptr != MAP_FAILED);
 
     // madvise(data_map_ptr, map_size, MADV_RANDOM);
     m_data = reinterpret_cast<uint64_t*>(reinterpret_cast<char*>(data_map_ptr) + misalignment);
-    
+
     close(fd);
     in.seekg(map_size + pos);
 }
