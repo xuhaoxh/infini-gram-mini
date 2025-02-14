@@ -19,8 +19,9 @@ class Processor:
     def __init__(self, config):
         assert 'dir' in config
         assert 'load_to_ram' in config
+        assert 'get_metadata' in config
 
-        self.engine = FmIndexEngine(index_dir=config['dir'], load_to_ram=config['load_to_ram'])
+        self.engine = FmIndexEngine(index_dir=config['dir'], load_to_ram=config['load_to_ram'], get_metadata=config['get_metadata'])
 
     def process(self, query_type, query, **kwargs):
         if type(query) != str:
@@ -53,7 +54,7 @@ class Processor:
                     haystack = span[0]
                     new_spans += self._replace(haystack, needle, label='0')
             spans = new_spans
-        result = {'spans': spans}
+        result = {'spans': spans, 'metadata': result['metadata']}
 
         return result
 

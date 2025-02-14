@@ -1,7 +1,20 @@
 [
     {
         "name": "pileval",
-        "dir": "/data_piletrain/pileval",
-        "load_to_ram": "false"
+        "dir": "/data_pile/pileval",
+        "load_to_ram": false,
+        "get_metadata": false
+    },
+    {
+        "name": "piletrain",
+        "dir": "/data_pile/piletrain",
+        "load_to_ram": false,
+        "get_metadata": false
+    },
+    {
+        "name": "dclm_1",
+        "dir": "/data_pile/dclm_1",
+        "load_to_ram": false,
+        "get_metadata": false
     }
 ]
