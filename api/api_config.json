@@ -16,5 +16,11 @@
         "dir": "/data_pile/dclm_1",
         "load_to_ram": false,
         "get_metadata": false
+    },
+    {
+        "name": "dclm",
+        "dir": "/data_dclm/dclm_f1_all",
+        "load_to_ram": false,
+        "get_metadata": false
     }
 ]
