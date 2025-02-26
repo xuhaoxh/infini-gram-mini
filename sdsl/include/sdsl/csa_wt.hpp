@@ -340,16 +340,11 @@ template<class t_wt, uint32_t t_dens, uint32_t t_inv_dens, class t_sa_sample_str
 inline auto csa_wt<t_wt, t_dens, t_inv_dens, t_sa_sample_strat, t_isa, t_alphabet_strat>::operator[](size_type i)const -> value_type
 {
     size_type off = 0;
-    // std::cout << "enter [] ........" << std::endl;
     auto start_time = std::chrono::high_resolution_clock::now();
     while (!m_sa_sample.is_sampled(i)) {
         i = lf[i];
         ++off;
     }
-    // std::cout << "finish [] while loop ........, looped " << off << " times" << std::endl;
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto load_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    // std::cout << "Access time for [] while loop: " << load_time << " ms." << std::endl;
     
     value_type result = m_sa_sample[i];
     if (result + off < size()) {

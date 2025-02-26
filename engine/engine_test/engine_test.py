@@ -9,7 +9,9 @@ import json
 from fm_engine.engine import FmIndexEngine
 
 def main():
-    engine = FmIndexEngine(index_dir="/mmfs1/gscratch/h2lab/xuhao/fm_index/experiments/pile_val")
+    # engine = FmIndexEngine(index_dir="/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-train", load_to_ram=False, get_metadata=True)
+    engine = FmIndexEngine(index_dir="/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/val", load_to_ram=True, get_metadata=True)
+    # engine = FmIndexEngine(index_dir="/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/test", load_to_ram=False, get_metadata=True)
 
     # with open("../src/query.json", 'r', encoding='utf-8') as file:
     #     queries = json.load(file)
@@ -26,12 +28,14 @@ def main():
     # print('Total count: ', np.sum(counts))
     # exit()
 
-    query = "natural language processing"
+    query = "nature"
     print(engine.count(query))
     print()
-    print(engine.locate(query, 100))
-    print()
-    print(engine.reconstruct(query, 30000, 200, 400))
+    # print(engine.locate(query, 100))
+    # print()
+    idx = random.randint(1, 1000)
+    print(f"idx: {idx}")
+    print(engine.reconstruct(query, 1, 100, 100))
     print()
 
 if __name__ == '__main__':

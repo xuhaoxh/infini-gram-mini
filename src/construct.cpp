@@ -50,8 +50,8 @@ int process(const string index_dir, const string path) {
         metaoffset_output.write(reinterpret_cast<const char*>(&current_meta_pos), sizeof(size_t));
 
         // entry["meta"] for pile, entry["metadata"] for DCLM
-        // meta_output << entry["meta"].dump() << separator;
-        meta_output << entry["metadata"].dump() << separator;
+        meta_output << entry["meta"].dump() << separator;
+        // meta_output << entry["metadata"].dump() << separator;
     }
     size_t final_text_pos = static_cast<size_t>(text_output.tellp());
     offset_output.write(reinterpret_cast<const char*>(&final_text_pos), sizeof(size_t));

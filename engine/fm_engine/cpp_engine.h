@@ -25,9 +25,9 @@ using namespace chrono;
 typedef unsigned long size_t;
 typedef unsigned long char_t;
 
-typedef csa_wt<wt_huff<rrr_vector<127>>, 32, 64> index_t;
-typedef csa_wt<wt_huff<rrr_vector<127>>, 8, 16> meta_index_t;
 // typedef csa_wt<wt_huff<rrr_vector<127>>, 512, 1024> index_t;
+typedef csa_wt<wt_huff<rrr_vector<127>>, 32, 64> index_t;
+typedef csa_wt<wt_huff<rrr_vector<127>>, 32, 64> meta_index_t;
 
 struct FMIndexShard {
     string path;
@@ -56,12 +56,6 @@ struct ReconstructResult {
     string metadata;
 };
 
-// struct MetadataResult {
-//     size_t shard_num;
-//     size_t location;
-//     string metadata;
-// };
-
 class Engine {
 public:
     Engine (const vector<string> index_dirs, bool load_to_ram, bool get_metadata) 
@@ -72,7 +66,8 @@ public:
             assert (fs::exists(index_dir));
 
             vector<string> id_paths;
-            for (const auto &entry : fs::directory_iterator(index_dir)) {
+            
+            for (const auto &entry : fs::recursive_directory_iterator(index_dir)) {
                 if (entry.path().extension() == ".fm9") {
                     id_paths.push_back(entry.path().string());
                 }

@@ -3,17 +3,41 @@
 #include "../fm_engine/cpp_engine.h"
 #include <iostream>
 #include <chrono>
+#include <random>
 
 int main() {
-    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/val"}, false, true);
+    auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-val"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/dclm-0000"}, false, true);
-    auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/test"}, false, true);
-    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-train"}, false);
+    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/test"}, false, true);
+    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-train"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-val-512"}, false);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-val"}, false);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/indexes/pile-train-0"}, false);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm_index/experiments/test/"}, false);
 
+    {
+        string query = "natural language processing";
+        cout << "query: " << query << endl;
+        auto count_result = engine.count(query);
+        cout << "count: " << count_result.count << endl;
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_int_distribution<> dist(1, count_result.count);
+        int random_idx = dist(gen);
+        
+        cout << "idx: " << random_idx << endl;
+        auto start = std::chrono::high_resolution_clock::now();
+        auto result = engine.reconstruct(query, random_idx, 100, 100);
+        auto end = std::chrono::high_resolution_clock::now();
+        cout << "text: " << result.text << endl;
+        cout << "shard_num: " << result.shard_num << endl;
+        cout << "meta_data: " << result.metadata << endl;
+
+        auto time = duration_cast<milliseconds>(end - start).count();
+        cout << "time taken: " << time << " ms." << endl;
+
+        cout << endl;
+    }
     // {
     //     cout << "count, empty query" << endl;
     //     string query = "";
@@ -78,25 +102,6 @@ int main() {
 
     //     cout << endl;
     // }
-    {
-        cout << "reconstruct, simple query" << endl;
-        // string query = "natural language processing";
-        // string query = "3.14";
-        string query = "Catalonia election";
-        // string query = "studies are required to confirm these findings";
-        cout << "query: " << query << endl;
-        auto start = std::chrono::high_resolution_clock::now();
-        auto result = engine.reconstruct(query, 1, 100, 100);
-        auto end = std::chrono::high_resolution_clock::now();
-        cout << "text: " << result.text << endl;
-        cout << "shard_num: " << result.shard_num << endl;
-        cout << "meta_data: " << result.metadata << endl;
-
-        auto time = duration_cast<milliseconds>(end - start).count();
-        cout << "time taken: " << time << " ms." << endl;
-
-        cout << endl;
-    }
     // {
     //     cout << "reconstruct, simple query, same shard" << endl;
     //     // string query = "natural language processing";
