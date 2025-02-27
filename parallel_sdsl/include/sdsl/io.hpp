@@ -442,7 +442,8 @@ struct default_sentinel<t_csx, byte_alphabet_tag> {
 
 template<class t_csx>
 struct default_sentinel<t_csx, int_alphabet_tag> {
-    static const char value = '0';
+    // static const char value = '0';
+    static const char value = '\xfa';
 };
 
 //! Prints members of CSAs and CSTs
