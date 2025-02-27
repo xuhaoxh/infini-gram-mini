@@ -1,4 +1,8 @@
 **/__pycache__/
 src/construct
 **/*.so
+src/rust_indexing
+src/cpp_indexing
+engine/engine_test/cpp_engine_test
 data/
+index/

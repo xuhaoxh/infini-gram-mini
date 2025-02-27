@@ -28,6 +28,8 @@
 #include "construct_bwt.hpp"
 #include "construct_sa.hpp"
 #include <string>
+#include <iostream>
+#include <chrono>
 
 namespace sdsl
 {
@@ -126,8 +128,9 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
     const char* KEY_BWT  = key_bwt_trait<t_index::alphabet_category::WIDTH>::KEY_BWT;
     typedef int_vector<t_index::alphabet_category::WIDTH> text_type;
     {
-        auto event = memory_monitor::event("parse input text");
         // (1) check, if the text is cached
+        auto start_time = std::chrono::high_resolution_clock::now();
+        auto event = memory_monitor::event("parse input text");
         if (!cache_file_exists(KEY_TEXT, config)) {
             text_type text;
             load_vector_from_file(text, file, num_bytes);
@@ -137,28 +140,43 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
             // }
         }
         register_cache_file(KEY_TEXT, config);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "Parsing input text took " << duration.count() << " seconds." << std::endl;
     }
     {
         // (2) check, if the suffix array is cached
+        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("SA");
         if (!cache_file_exists(conf::KEY_SA, config)) {
             construct_sa<t_index::alphabet_category::WIDTH>(config);
         }
         register_cache_file(conf::KEY_SA, config);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "Constructing SA took " << duration.count() << " seconds." << std::endl;
     }
     {
         //  (3) construct BWT
+        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("BWT");
         if (!cache_file_exists(KEY_BWT, config)) {
             construct_bwt<t_index::alphabet_category::WIDTH>(config);
         }
         register_cache_file(KEY_BWT, config);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "Constructing BWT took " << duration.count() << " seconds." << std::endl;
     }
     {
         //  (4) use BWT to construct the CSA
+        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("construct CSA");
         t_index tmp(config);
         idx.swap(tmp);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "WT and sampling SA took " << duration.count() << " seconds." << std::endl;
     }
     if (config.delete_files) {
         auto event = memory_monitor::event("delete temporary files");

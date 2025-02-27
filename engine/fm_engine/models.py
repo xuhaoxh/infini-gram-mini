@@ -1,22 +1,22 @@
-from typing import Any, Iterable, List, Sequence, Tuple, TypeAlias, TypeVar, TypedDict
+from typing import List, Tuple, TypeAlias, TypeVar, TypedDict
 
 class ErrorResponse(TypedDict):
-    error: str 
+    error: str
 
 T = TypeVar("T")
-FmEngineResponse: TypeAlias = ErrorResponse | T 
+FmEngineResponse: TypeAlias = ErrorResponse | T
+
+class FindResponse(TypedDict):
+    cnt: int
+    segment_by_shard: List[Tuple[int, int]]
 
 class CountResponse(TypedDict):
     count: int
-    count_by_shard: List[int]
-    lo_by_shard: List[int]
 
-class LocateResponse(TypedDict):
-    location: int
-    shard_num: int
-
-class ReconstructResponse(TypedDict):
-    text: str
-    shard_num: int
-    metadata: str
-
+class DocResponse(TypedDict):
+    doc_ix: int
+    doc_len: int
+    disp_len: int
+    needle_offset: int
+    meta: str
+    data: str

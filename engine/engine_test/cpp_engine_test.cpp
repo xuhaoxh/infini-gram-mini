@@ -1,4 +1,4 @@
-// g++ -std=c++17 -O3 engine_test/cpp_engine_test.cpp -o engine_test/cpp_engine_test -I../sdsl/include -L../sdsl/lib -lsdsl -ldivsufsort -ldivsufsort64 -pthread 
+// g++ -std=c++17 -O3 engine_test/cpp_engine_test.cpp -o engine_test/cpp_engine_test -I../sdsl/include -L../sdsl/lib -lsdsl -ldivsufsort -ldivsufsort64 -pthread
 
 #include "../fm_engine/cpp_engine.h"
 #include <iostream>
@@ -6,7 +6,8 @@
 #include <random>
 
 int main() {
-    auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-val"}, false, true);
+    auto engine = Engine({"../index/pileval"}, false, true);
+    // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-val"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/dclm-0000"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/test"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-train"}, false, true);
@@ -17,27 +18,51 @@ int main() {
 
     {
         string query = "natural language processing";
+        // string query = "";
         cout << "query: " << query << endl;
-        auto count_result = engine.count(query);
-        cout << "count: " << count_result.count << endl;
-        random_device rd;
-        mt19937 gen(rd());
-        uniform_int_distribution<> dist(1, count_result.count);
-        int random_idx = dist(gen);
-        
-        cout << "idx: " << random_idx << endl;
-        auto start = std::chrono::high_resolution_clock::now();
-        auto result = engine.reconstruct(query, random_idx, 100, 100);
-        auto end = std::chrono::high_resolution_clock::now();
-        cout << "text: " << result.text << endl;
-        cout << "shard_num: " << result.shard_num << endl;
-        cout << "meta_data: " << result.metadata << endl;
+        auto find_result = engine.find(query);
+        cout << "count: " << find_result.cnt << endl;
 
-        auto time = duration_cast<milliseconds>(end - start).count();
-        cout << "time taken: " << time << " ms." << endl;
+        auto [start, end] = find_result.segment_by_shard[0];
+        auto doc = engine.get_doc_by_rank(0, start, query.length(), 20);
+        cout << "doc_ix: " << doc.doc_ix << endl;
+        cout << "doc_len: " << doc.doc_len << endl;
+        cout << "disp_len: " << doc.disp_len << endl;
+        cout << "needle_offset: " << doc.needle_offset << endl;
+        cout << "meta: " << doc.meta << endl;
+        cout << "data: " << doc.data << endl;
 
-        cout << endl;
+        doc = engine.get_doc_by_rank(0, end, query.length(), 20);
+        cout << "doc_ix: " << doc.doc_ix << endl;
+        cout << "doc_len: " << doc.doc_len << endl;
+        cout << "disp_len: " << doc.disp_len << endl;
+        cout << "needle_offset: " << doc.needle_offset << endl;
+        cout << "meta: " << doc.meta << endl;
+        cout << "data: " << doc.data << endl;
     }
+    // {
+    //     string query = "natural language processing";
+    //     cout << "query: " << query << endl;
+    //     auto count_result = engine.count(query);
+    //     cout << "count: " << count_result.count << endl;
+    //     random_device rd;
+    //     mt19937 gen(rd());
+    //     uniform_int_distribution<> dist(1, count_result.count);
+    //     int random_idx = dist(gen);
+
+    //     cout << "idx: " << random_idx << endl;
+    //     auto start = std::chrono::high_resolution_clock::now();
+    //     auto result = engine.reconstruct(query, random_idx, 100, 100);
+    //     auto end = std::chrono::high_resolution_clock::now();
+    //     cout << "text: " << result.text << endl;
+    //     cout << "shard_num: " << result.shard_num << endl;
+    //     cout << "meta_data: " << result.metadata << endl;
+
+    //     auto time = duration_cast<milliseconds>(end - start).count();
+    //     cout << "time taken: " << time << " ms." << endl;
+
+    //     cout << endl;
+    // }
     // {
     //     cout << "count, empty query" << endl;
     //     string query = "";
@@ -83,7 +108,7 @@ int main() {
 
     //     auto time = duration_cast<milliseconds>(end - start).count();
     //     cout << "time taken: " << time << " ms." << endl;
-        
+
     //     cout << endl;
     // }
     // {

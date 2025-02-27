@@ -1,31 +1,33 @@
 import sys
 from typing import Iterable, List, Optional, cast
 
-from fm_engine.models import FmEngineResponse, CountResponse, LocateResponse, ReconstructResponse
+from fm_engine.models import FmEngineResponse, FindResponse, CountResponse, DocResponse
 from .cpp_engine import Engine
 
 class FmIndexEngine:
-    
-    def __init__(self, index_dir: Iterable[str] | str, load_to_ram: bool, get_metadata: bool) -> None:
-        
+
+    def __init__(self, index_dirs: Iterable[str], load_to_ram: bool, get_metadata: bool) -> None:
+
         assert sys.byteorder == 'little', 'This code is designed to run on little-endian machines only!'
+        assert type(index_dirs) == list and all(type(d) == str for d in index_dirs)
 
-        if type(index_dir) == str:
-            index_dir = [index_dir]
-        assert type(index_dir) == list and all(type(d) == str for d in index_dir)
+        self.engine = Engine(index_dirs, load_to_ram, get_metadata)
 
-        self.engine = Engine(index_dir, load_to_ram, get_metadata)
-    
-    def count(self, query) -> FmEngineResponse[CountResponse]:
+    def find(self, query: str) -> FmEngineResponse[FindResponse]:
+        result = self.engine.find(query)
+        return {'cnt': result.cnt, 'segment_by_shard': result.segment_by_shard}
+
+    def count(self, query: str) -> FmEngineResponse[CountResponse]:
         result = self.engine.count(query)
-        return {'count': result.count, 'count_by_shard': result.count_by_shard, 'lo_by_shard': result.lo_by_shard}
-    
-    def locate(self, query, num_occ) -> FmEngineResponse[LocateResponse]:
-        result = self.engine.locate(query, num_occ)
-        return {'location': result.location, 'shard_num': result.shard_num}
-    
-    def reconstruct(self, query, num_occ, pre_text, post_text) -> FmEngineResponse[ReconstructResponse]:
-        result = self.engine.reconstruct(query, num_occ, pre_text, post_text)
-        # print(f"reconstructed text: {result.text}")
-        return {'text': result.text, 'shard_num': result.shard_num, 'metadata': result.metadata}
-        
+        return {'count': result.count}
+
+    def get_doc_by_rank(self, s: int, rank: int, needle_len: int, max_ctx_len: int) -> FmEngineResponse[DocResponse]:
+        result = self.engine.get_doc_by_rank(s, rank, needle_len, max_ctx_len)
+        return {
+            'doc_ix': result.doc_ix,
+            'doc_len': result.doc_len,
+            'disp_len': result.disp_len,
+            'needle_offset': result.needle_offset,
+            'meta': cast(str, result.meta.decode('utf-8')),
+            'data': cast(str, result.data.decode('utf-8'))
+        }

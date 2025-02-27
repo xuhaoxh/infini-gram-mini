@@ -43,7 +43,7 @@ int process(const string index_dir, const string path) {
         offset_output.write(reinterpret_cast<const char*>(&current_text_pos), sizeof(size_t));
 
         json entry = json::parse(line);
-        string text = " " + separator + " " + entry["text"].get<string>();
+        string text = separator + entry["text"].get<string>();
         text_output << text;
 
         size_t current_meta_pos = static_cast<size_t>(meta_output.tellp());
