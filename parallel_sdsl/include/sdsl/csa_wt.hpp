@@ -305,28 +305,44 @@ csa_wt<t_wt, t_dens, t_inv_dens, t_sa_sample_strat, t_isa, t_alphabet_strat>::cs
         return;
     }
     {
+        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("construct csa-alpbabet");
         int_vector_buffer<alphabet_type::int_width> bwt_buf(cache_file_name(key_trait<alphabet_type::int_width>::KEY_BWT,config));
         size_type n = bwt_buf.size();
         alphabet_type tmp_alphabet(bwt_buf, n);
         m_alphabet.swap(tmp_alphabet);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "Step 4 (csa-alphabet): Done. Took " << duration.count() << " seconds" << std::endl;
     }
     {
+        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("construct wavelet tree");
         int_vector_buffer<alphabet_type::int_width> bwt_buf(cache_file_name(key_trait<alphabet_type::int_width>::KEY_BWT,config));
         size_type n = bwt_buf.size();
         wavelet_tree_type tmp_wt(bwt_buf, n);
         m_wavelet_tree.swap(tmp_wt);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "Step 5 (wavetree): Done. Took " << duration.count() << " seconds" << std::endl;
     }
     {
+        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("sample SA");
         sa_sample_type tmp_sa_sample(config);
         m_sa_sample.swap(tmp_sa_sample);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "Step 6 (sampling SA): Done. Took " << duration.count() << " seconds" << std::endl;
     }
     {
+        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("sample ISA");
         isa_sample_type isa_s(config, &m_sa_sample);
         util::swap_support(m_isa_sample, isa_s, &m_sa_sample, &m_sa_sample);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+        std::cout << "Step 7 (sample ISA): Done. Took " << duration.count() << " seconds" << std::endl;
     }
 }
 

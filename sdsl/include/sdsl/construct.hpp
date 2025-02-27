@@ -142,7 +142,7 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
         register_cache_file(KEY_TEXT, config);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-        std::cout << "Parsing input text took " << duration.count() << " seconds." << std::endl;
+        std::cout << "Step 1 (prepare): Done. Took " << duration.count() << " seconds" << std::endl;
     }
     {
         // (2) check, if the suffix array is cached
@@ -154,7 +154,7 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
         register_cache_file(conf::KEY_SA, config);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-        std::cout << "Constructing SA took " << duration.count() << " seconds." << std::endl;
+        std::cout << "Step 2 (build_sa): Done. Took " << duration.count() << " seconds" << std::endl;
     }
     {
         //  (3) construct BWT
@@ -166,17 +166,13 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
         register_cache_file(KEY_BWT, config);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-        std::cout << "Constructing BWT took " << duration.count() << " seconds." << std::endl;
+        std::cout << "Step 3 (build_bwt): Done. Took " << duration.count() << " seconds" << std::endl;
     }
     {
         //  (4) use BWT to construct the CSA
-        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("construct CSA");
         t_index tmp(config);
         idx.swap(tmp);
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-        std::cout << "WT and sampling SA took " << duration.count() << " seconds." << std::endl;
     }
     if (config.delete_files) {
         auto event = memory_monitor::event("delete temporary files");

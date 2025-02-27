@@ -91,18 +91,18 @@ def prepare(args):
     end_time = time.time()
     print(f'Step 1 (prepare): Done. Took {end_time-start_time:.2f} seconds')
 
-def build_sa(args, mode):
+def build_sa_bwt(args, mode):
 
     ds_path = os.path.join(args.save_dir, mode)
     sa_path = ds_path + '_sa'
     bwt_path = ds_path + '_bwt'
     if os.path.exists(sa_path) and os.path.exists(bwt_path):
-        print(f'Step 2 (build_sa): Skipped. SA and BWT file already exists.')
+        print(f'Step 2 (build_sa_bwt): Skipped. SA and BWT file already exists.')
         return
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    print('Step 2 (build_sa): Starting ...')
+    print('Step 2 (build_sa_bwt): Starting ...')
     start_time_all = time.time()
 
     # -------- Step 2.1 (make-part) -------- #
@@ -193,7 +193,7 @@ def build_sa(args, mode):
         exit(1)
 
     end_time_all = time.time()
-    print(f'Step 2 (build_sa): Done. Took {end_time_all-start_time_all:.2f} seconds')
+    print(f'Step 2 (build_sa_bwt): Done. Took {end_time_all-start_time_all:.2f} seconds')
 
 def format_file(args):
     print('Step 3 (format_file): Starting ...')
@@ -266,15 +266,11 @@ def main():
     resource.setrlimit(resource.RLIMIT_NOFILE, (args.ulimit, args.ulimit))
 
     prepare(args)
-    build_sa(args, mode='data')
-    build_sa(args, mode='meta')
+    build_sa_bwt(args, mode='data')
+    build_sa_bwt(args, mode='meta')
     format_file(args)
 
-    print('Step 4 (wavetree, sampling): Starting ...')
-    start_time = time.time()
     print(os.popen(f'./cpp_indexing {args.data_dir} {args.save_dir}').read())
-    end_time = time.time()
-    print(f'Step 4 (BWT, wavetree, sampling): Done. Took {end_time-start_time:.2f} seconds')
 
 if __name__ == '__main__':
     main()
