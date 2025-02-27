@@ -1,3 +1,5 @@
+// g++ -std=c++17 -I../sdsl/include -L../sdsl/lib construct.cpp -o construct -lsdsl -ldivsufsort -ldivsufsort64
+
 #include <sdsl/suffix_arrays.hpp>
 #include <string>
 #include <iostream>
@@ -85,7 +87,7 @@ int construct(string index_dir, string path) {
 
         memory_monitor::start();
         auto start = high_resolution_clock::now();
-        sdsl::cache_config config(true, index_dir);
+        sdsl::cache_config config(false, index_dir);
         construct(fm_index, file_path + ".text", config, 1);
         auto end = high_resolution_clock::now();
         memory_monitor::stop();
@@ -105,7 +107,7 @@ int construct(string index_dir, string path) {
 
         memory_monitor::start();
         auto meta_start = high_resolution_clock::now();
-        sdsl::cache_config config(true, index_dir);
+        sdsl::cache_config config(false, index_dir);
         construct(metadata_index, file_path + "_meta", config, 1);
         store_to_file(metadata_index, meta_index_file);
         auto meta_end = high_resolution_clock::now();

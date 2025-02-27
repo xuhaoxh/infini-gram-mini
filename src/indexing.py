@@ -95,8 +95,9 @@ def build_sa(args, mode):
 
     ds_path = os.path.join(args.save_dir, mode)
     sa_path = ds_path + '_sa'
-    if os.path.exists(sa_path):
-        print(f'Step 2 (build_sa): Skipped. SA file already exists.')
+    bwt_path = ds_path + '_bwt'
+    if os.path.exists(sa_path) and os.path.exists(bwt_path):
+        print(f'Step 2 (build_sa): Skipped. SA and BWT file already exists.')
         return
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -151,8 +152,11 @@ def build_sa(args, mode):
     merged_dir = os.path.join(args.temp_dir, f'merged')
     shutil.rmtree(merged_dir, ignore_errors=True)
     os.makedirs(merged_dir)
+    bwt_dir = os.path.join(args.temp_dir, f'bwt')
+    shutil.rmtree(bwt_dir, ignore_errors=True)
+    os.makedirs(bwt_dir)
 
-    cmd = f'./rust_indexing merge --merged-dir {merged_dir} --suffix-path {" --suffix-path ".join(files)} --num-threads {args.cpus} --hacksize {HACK}'
+    cmd = f'./rust_indexing merge --merged-dir {merged_dir} --bwt-dir {bwt_dir} --suffix-path {" --suffix-path ".join(files)} --num-threads {args.cpus} --hacksize {HACK}'
     pipe = os.popen(cmd)
     output = pipe.read()
     if pipe.close() is not None:
@@ -171,6 +175,8 @@ def build_sa(args, mode):
 
     os.popen(f'cat {merged_dir}/* > {sa_path}').read()
     shutil.rmtree(merged_dir)
+    os.popen(f'cat {bwt_dir}/* > {bwt_path}').read()
+    shutil.rmtree(bwt_dir)
 
     end_time = time.time()
     print(f'Step 2.3 (concat): Done. Took {end_time-start_time:.2f} seconds')
@@ -217,6 +223,17 @@ def format_file(args):
                 sa_fout.write(b'\00' * (8 - sa_bytes % 8))
         os.remove(sa_path)
 
+        bwt_path = ds_path + '_bwt'
+        bwt_path_new = os.path.join(args.save_dir, f'bwt_{mode}.sdsl')
+        bwt_bytes = os.path.getsize(bwt_path)
+        with open(bwt_path_new, 'wb') as bwt_fout:
+            bwt_fout.write(np.array([bwt_bytes * 8], dtype=np.uint64).view(np.uint8).tobytes())
+        os.popen(f'cat {bwt_path} >> {bwt_path_new}').read()
+        with open(bwt_path_new, 'ab') as bwt_fout:
+            if bwt_bytes % 8 != 0:
+                bwt_fout.write(b'\00' * (8 - bwt_bytes % 8))
+        os.remove(bwt_path)
+
     end_time = time.time()
     print(f'Step 3 (format_file): Done. Took {end_time-start_time:.2f} seconds')
 
@@ -253,7 +270,7 @@ def main():
     build_sa(args, mode='meta')
     format_file(args)
 
-    print('Step 4 (BWT, wavetree, sampling): Starting ...')
+    print('Step 4 (wavetree, sampling): Starting ...')
     start_time = time.time()
     print(os.popen(f'./cpp_indexing {args.data_dir} {args.save_dir}').read())
     end_time = time.time()

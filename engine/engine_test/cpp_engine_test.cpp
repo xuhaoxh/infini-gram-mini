@@ -6,7 +6,7 @@
 #include <random>
 
 int main() {
-    auto engine = Engine({"../index/pileval"}, false, true);
+    auto engine = Engine({"../index/pileval_bwt"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-val"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/dclm-0000"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/test"}, false, true);

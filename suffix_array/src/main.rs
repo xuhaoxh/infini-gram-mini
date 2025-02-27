@@ -141,6 +141,8 @@ enum Commands {
         suffix_path: Vec<String>,
         #[clap(short, long)]
         merged_dir: String,
+        #[clap(short, long)]
+        bwt_dir: String,
         #[clap(short, long, default_value_t = 8)]
         num_threads: i64,
         #[clap(long, default_value_t = 100000)]
@@ -898,7 +900,7 @@ impl<'a> PartialOrd for MergeState<'a> {
  * will work out correctly. (I did call it hacksize after all.....)
  * In practice this works. It may not for your use case if there are long duplicates.
  */
- fn cmd_merge(data_files: &Vec<String>, merged_dir: &String, num_threads: i64, hacksize: usize)  -> std::io::Result<()> {
+ fn cmd_merge(data_files: &Vec<String>, merged_dir: &String, bwt_dir: &String, num_threads: i64, hacksize: usize)  -> std::io::Result<()> {
     // This value is declared here, but also in scripts/make_suffix_array.py
     // If you want to change it, it needs to be changed in both places.
 
@@ -930,7 +932,7 @@ impl<'a> PartialOrd for MergeState<'a> {
     let ratio = metadatas[0] / (texts[0].len() as u64);
 
     fn worker(texts:&Vec<Vec<u8>>, starts:Vec<usize>, ends:Vec<usize>, texts_len:Vec<usize>, part:usize,
-            merged_dir: String, data_files: Vec<String>, ratio: usize, big_ratio: usize, hacksize: usize) {
+            merged_dir: String, bwt_dir: String, data_files: Vec<String>, ratio: usize, big_ratio: usize, hacksize: usize) {
 
         let nn = texts.len();
         let mut tables:Vec<TableStream> = (0..nn).map(|x| {
@@ -945,6 +947,7 @@ impl<'a> PartialOrd for MergeState<'a> {
         }).collect();
 
         let mut next_table = std::io::BufWriter::new(File::create(format!("{}/{:04}", merged_dir.clone(), part)).unwrap());
+        let mut bwt = std::io::BufWriter::new(File::create(format!("{}/{:04}", bwt_dir.clone(), part)).unwrap());
 
         fn get_next_maybe_skip(mut tablestream:&mut TableStream,
                                index:&mut u64, thresh:usize) -> u64 {
@@ -988,6 +991,13 @@ impl<'a> PartialOrd for MergeState<'a> {
         while let Some(MergeState {suffix: _suffix, position, table_index, hacksize}) = heap.pop() {
             //next_table.write_all(&(position + delta[table_index] as u64).to_le_bytes()).expect("Write OK");
             next_table.write_all(&(position + delta[table_index] as u64).to_le_bytes()[..big_ratio]).expect("Write OK");
+            if position > 0 {
+                bwt.write_all(&texts[table_index][position as usize-1..position as usize]).expect("Write OK");
+            } else if table_index > 0 {
+                bwt.write_all(&texts[table_index-1][texts_len[table_index-1]-1..texts_len[table_index-1]]).expect("Write OK");
+            } else {
+                bwt.write_all(&texts[texts.len()-1][texts_len[texts.len()-1]-1..texts_len[texts.len()-1]]).expect("Write OK");
+            }
 
             let position = get_next_maybe_skip(&mut tables[table_index],
                                                &mut idxs[table_index], texts_len[table_index],);
@@ -1075,6 +1085,7 @@ impl<'a> PartialOrd for MergeState<'a> {
                        texts_len2,
                        i,
                        (*merged_dir).clone(),
+                       (*bwt_dir).clone(),
                        (*data_files).clone(),
                        ratio as usize,
                        big_ratio as usize,
@@ -1253,8 +1264,8 @@ fn main()  -> std::io::Result<()> {
                                *num_threads)?;
         }
 
-        Commands::Merge { suffix_path, merged_dir, num_threads, hacksize } => {
-            cmd_merge(suffix_path, merged_dir, *num_threads, *hacksize)?;
+        Commands::Merge { suffix_path, merged_dir, bwt_dir, num_threads, hacksize } => {
+            cmd_merge(suffix_path, merged_dir, bwt_dir, *num_threads, *hacksize)?;
         }
 
         Commands::Collect { data_file, cache_dir, length_threshold } => {
