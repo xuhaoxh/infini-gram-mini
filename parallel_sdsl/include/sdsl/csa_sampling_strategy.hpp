@@ -89,12 +89,8 @@ class _sa_order_sampling : public int_vector<t_width>
             this->width(bits::hi(n)+1);
             this->resize((n+sample_dens-1)/sample_dens);
 
-            for (size_type i=0, cnt_mod=sample_dens, cnt_sum=0; i < n; ++i, ++cnt_mod) {
-                size_type sa = sa_buf[i];
-                if (sample_dens == cnt_mod) {
-                    cnt_mod = 0;
-                    base_type::operator[](cnt_sum++) = sa;
-                }
+            for (size_type i = 0; i * sample_dens < n; i++) {
+                base_type::operator[](i) = sa_buf[i * sample_dens];
             }
         }
 
