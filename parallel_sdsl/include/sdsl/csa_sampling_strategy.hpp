@@ -57,6 +57,8 @@
 #include "wavelet_trees.hpp"
 #include <set>
 #include <tuple>
+#include <vector>
+#include <thread>
 
 namespace sdsl
 {
@@ -621,7 +623,26 @@ class _isa_sampling : public int_vector<t_width>
          */
         _isa_sampling(const cache_config& cconfig, SDSL_UNUSED const sa_type* sa_sample=nullptr)
         {
+            // int_vector_buffer<>  sa_buf(cache_file_name(conf::KEY_SA, cconfig));
+            // size_type n = sa_buf.size();
+            // if (n >= 1) { // so n+t_csa::isa_sample_dens >= 2
+            //     this->width(bits::hi(n)+1);
+            //     this->resize((n-1)/sample_dens+1);
+            // }
+            // for (size_type i=0; i < this->size(); ++i) base_type::operator[](i) = 0;
+
+            // for (size_type i=0; i < n; ++i) {
+            //     size_type sa = sa_buf[i];
+            //     if ((sa % sample_dens) == 0) {
+            //         base_type::operator[](sa/sample_dens) = i;
+            //     }
+            // }
+
+            const size_t BLOCK_SIZE = 1024 * 1024 * 1024;
+            const size_t THREAD_NUM = 128; // must be a divisor of BLOCK_SIZE
+
             int_vector_buffer<>  sa_buf(cache_file_name(conf::KEY_SA, cconfig));
+            sa_buf.buffersize(sa_buf.width() * BLOCK_SIZE / 8);
             size_type n = sa_buf.size();
             if (n >= 1) { // so n+t_csa::isa_sample_dens >= 2
                 this->width(bits::hi(n)+1);
@@ -629,8 +650,22 @@ class _isa_sampling : public int_vector<t_width>
             }
             for (size_type i=0; i < this->size(); ++i) base_type::operator[](i) = 0;
 
-            for (size_type i=0; i < n; ++i) {
-                size_type sa = sa_buf[i];
+            for (size_type start = 0; start < n; start += BLOCK_SIZE) {
+                size_type end = std::min(start + BLOCK_SIZE, n);
+                std::vector<std::thread> threads;
+                for (size_t t = 0; t < THREAD_NUM; t++) {
+                    size_type thread_start = std::min(start + t * (BLOCK_SIZE / THREAD_NUM), n);
+                    size_type thread_end = std::min(start + (t + 1) * (BLOCK_SIZE / THREAD_NUM), n);
+                    threads.emplace_back(&_isa_sampling::_isa_sampling_thread, this, &sa_buf, thread_start, thread_end);
+                }
+                for (auto& t : threads) {
+                    t.join();
+                }
+            }
+        }
+        void _isa_sampling_thread(int_vector_buffer<> *sa_buf, size_type start, size_type end) {
+            for (size_type i = start; i < end; ++i) {
+                size_type sa = (*sa_buf)[i];
                 if ((sa % sample_dens) == 0) {
                     base_type::operator[](sa/sample_dens) = i;
                 }

@@ -25,6 +25,10 @@ int construct(string index_dir) {
         construct(fm_index, index_dir + "/data", config, 1);
         store_to_file(fm_index, index_file);
         memory_monitor::stop();
+
+        std::ofstream fout(index_dir + "/memory_traces.html");
+        memory_monitor::write_memory_log<HTML_FORMAT>(fout);
+        fout.close();
     }
 
     if (!load_from_file(metadata_index, meta_index_file)) {
