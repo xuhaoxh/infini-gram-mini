@@ -21,8 +21,8 @@ PYBIND11_MODULE(cpp_engine, m) {
         .def_readwrite("doc_len", &DocResult::doc_len)
         .def_readwrite("disp_len", &DocResult::disp_len)
         .def_readwrite("needle_offset", &DocResult::needle_offset)
-        .def_readwrite("meta", &DocResult::meta)
-        .def_readwrite("data", &DocResult::data);
+        .def_readwrite("metadata", &DocResult::metadata)
+        .def_readwrite("text", &DocResult::text);
 
     py::class_<Engine>(m, "Engine")
         .def(py::init<const vector<string>, const bool, const bool>())

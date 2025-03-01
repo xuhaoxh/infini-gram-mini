@@ -185,16 +185,16 @@ class wt_pc
 
 #define THRESHOLD 10000
 
-	// Build wavelet tree recursively level by level 
+	// Build wavelet tree recursively level by level
 	void build_recursive(size_type start, size_type length,
-			int_vector<tree_strat_type::int_width>& source, 
+			int_vector<tree_strat_type::int_width>& source,
 			int_vector<tree_strat_type::int_width>& destination,
 			uint64_t* tree_data,
-			std::vector<uint64_t>& bv_node_pos, 
+			std::vector<uint64_t>& bv_node_pos,
 			node_type v, // = m_tree.root()
 			size_type l = 0) {
 		uint64_t mask = (1LL << l);
-		size_type wt_begin = bv_node_pos[v];	
+		size_type wt_begin = bv_node_pos[v];
 		size_type wt_end = wt_begin + length - 1;
 		size_type source_offset = start - wt_begin;
 		if (length < 128) {
@@ -213,7 +213,7 @@ class wt_pc
 			if (word != wt_end/64) { // if last word different then first
 				word = wt_end/64;
 				while (wt_end%64 != 63) { // share last word
-					
+
 					if (m_tree.bit_path(source[source_offset + wt_end]) & mask)
 						write_or(&tree_data[word], 1LL << (wt_end % 64));
 					wt_end--;
@@ -237,7 +237,7 @@ class wt_pc
 
 			}
 		}
-		// If not leaf make recursive calls 
+		// If not leaf make recursive calls
 		if (!m_tree.is_leaf(v)) {
 			// Reset begin and end
 			wt_begin = bv_node_pos[v];
@@ -247,7 +247,7 @@ class wt_pc
 				cilk_spawn this->build_recursive(start, right_start, destination, source, tree_data, bv_node_pos, m_tree.child(v,0) , l+1);
 			}
 			if (length - right_start) {
-				build_recursive(start + right_start, length - right_start, destination, source, tree_data, bv_node_pos, m_tree.child(v,1), l+1);			
+				build_recursive(start + right_start, length - right_start, destination, source, tree_data, bv_node_pos, m_tree.child(v,1), l+1);
 			}
 		}
 	}
@@ -274,7 +274,7 @@ class wt_pc
 	    // For parallel construction buffer needs to be in memory
 	    int_vector<tree_strat_type::int_width> s1(m_size);
 	    int_vector<tree_strat_type::int_width> s2(m_size);
-	    // Has to be sequential because may be on disk 
+	    // Has to be sequential because may be on disk
 	    for (size_type i = 0;i < m_size; i++) {
 		s1[i] = input_buf[i];
 	    }
@@ -291,7 +291,7 @@ class wt_pc
             size_type tree_size = construct_tree_shape(C);
             // 4. Generate wavelet tree bit sequence m_bv
             bit_vector temp_bv(tree_size, 0);
-	
+
 	    // START PERFORMANCE CRITCAL
             // Initializing starting position of wavelet tree nodes
 	    std::vector<uint64_t> bv_node_pos(m_tree.size(), 0);
@@ -308,18 +308,19 @@ class wt_pc
             // 5. Initialize rank and select data structures for m_bv
             this->construct_init_rank_select();
 	    // END PERFORMANCE CRITICAL
-	    
+
 
             // 6. Finish inner nodes by precalculating the bv_pos_rank values
             m_tree.init_node_ranks(m_bv_rank);
         }
-	// Faster in-memory construction
+
+        // Faster in-memory construction
         wt_pc(int_vector<tree_strat_type::int_width>& s1,
               size_type size):m_size(size) {
             if (0 == m_size)
                 return;
-	    // For parallel construction buffer needs to be in memory
-	    int_vector<tree_strat_type::int_width> s2(m_size);
+            // For parallel construction buffer needs to be in memory
+            int_vector<tree_strat_type::int_width> s2(m_size);
             // O(n + |\Sigma|\log|\Sigma|) algorithm for calculating node sizes
             // TODO: C should also depend on the tree_strategy. C is just a mapping
             // from a symbol to its frequency. So a map<uint64_t,uint64_t> could be
@@ -333,20 +334,19 @@ class wt_pc
             size_type tree_size = construct_tree_shape(C);
             // 4. Generate wavelet tree bit sequence m_bv
             bit_vector temp_bv(tree_size, 0);
-	
-	    // START PERFORMANCE CRITCAL
+
+            // START PERFORMANCE CRITCAL
             // Initializing starting position of wavelet tree nodes
-	    std::vector<uint64_t> bv_node_pos(m_tree.size(), 0);
-	    for (size_type v=0; v < m_tree.size(); ++v) {
-		bv_node_pos[v] = m_tree.bv_pos(v);
-	    }
-	    // start, len, source, destination, huff_tree_structure, output_wt
-	    this->build_recursive(0, m_size, s1, s2, (uint64_t*)temp_bv.data(), bv_node_pos, m_tree.root());
+            std::vector<uint64_t> bv_node_pos(m_tree.size(), 0);
+            for (size_type v=0; v < m_tree.size(); ++v) {
+                bv_node_pos[v] = m_tree.bv_pos(v);
+            }
+            // start, len, source, destination, huff_tree_structure, output_wt
+            this->build_recursive(0, m_size, s1, s2, (uint64_t*)temp_bv.data(), bv_node_pos, m_tree.root());
             m_bv = bit_vector_type(std::move(temp_bv));
             // 5. Initialize rank and select data structures for m_bv
             this->construct_init_rank_select();
-	    // END PERFORMANCE CRITICAL
-	    
+    	    // END PERFORMANCE CRITICAL
 
             // 6. Finish inner nodes by precalculating the bv_pos_rank values
             m_tree.init_node_ranks(m_bv_rank);

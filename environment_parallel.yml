@@ -1,0 +1,11 @@
+name: hf-parallel-sdsl
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11.8
+  - pip:
+    - beaker-gantry
+    - zstandard
+    - numpy
+    - tqdm

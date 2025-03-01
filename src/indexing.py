@@ -34,10 +34,12 @@ def load_file(path):
         raise ValueError(f'Unknown file type: {path}')
     return lines
 
-def parse_line(line):
+def parse_line(line, doc_sep, path, linenum):
     meta = json.loads(line.strip('\n'))
     data = meta['text']
     del meta['text']
+    data = doc_sep + data.encode('utf-8')
+    meta = (json.dumps({'path': path, 'linenum': linenum, 'metadata': meta}) + '\n').encode('utf-8')
     return data, meta
 
 def prepare(args):
@@ -65,19 +67,16 @@ def prepare(args):
             rel_data_path = data_path.split('/')[-1]
             lines = load_file(data_path)
             for offset in tqdm(range(0, len(lines), args.batch_size), total=len(range(0, len(lines), args.batch_size))):
-                batch_lines = lines[offset:(offset+args.batch_size)]
-                results = p.map(parse_line, batch_lines)
+                batch_lines = lines[offset:min(offset+args.batch_size, len(lines))]
+                results = p.starmap(parse_line, [(line, args.doc_sep, rel_data_path, offset+i) for i, line in enumerate(batch_lines)])
                 for i, (data, meta) in enumerate(results):
-                    content = args.doc_sep + data.encode('utf-8')
-                    ds_fout.write(content)
+                    ds_fout.write(data)
                     od_fout.write(np.array([od], dtype=np.uint64).view(np.uint8).tobytes())
-                    od += len(content)
+                    od += len(data)
 
-                    linenum = offset + i
-                    mt = (json.dumps({'path': rel_data_path, 'linenum': linenum, 'metadata': meta}) + '\n').encode('utf-8')
-                    mt_fout.write(mt)
+                    mt_fout.write(meta)
                     om_fout.write(np.array([om], dtype=np.uint64).view(np.uint8).tobytes())
-                    om += len(mt)
+                    om += len(meta)
                 del results
             del lines
             gc.collect()

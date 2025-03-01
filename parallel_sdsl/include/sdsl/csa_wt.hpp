@@ -318,9 +318,13 @@ csa_wt<t_wt, t_dens, t_inv_dens, t_sa_sample_strat, t_isa, t_alphabet_strat>::cs
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("construct wavelet tree");
-        int_vector_buffer<alphabet_type::int_width> bwt_buf(cache_file_name(key_trait<alphabet_type::int_width>::KEY_BWT,config));
-        size_type n = bwt_buf.size();
-        wavelet_tree_type tmp_wt(bwt_buf, n);
+
+        int_vector<alphabet_type::int_width> bwt;
+        load_from_cache(bwt, key_trait<alphabet_type::int_width>::KEY_BWT, config);
+        // std::cout << "bwt size = " << bwt.size() << ", width = " << (int)(bwt.width()) << std::endl;
+        size_type n = bwt.size();
+        wavelet_tree_type tmp_wt(bwt, n);
+
         m_wavelet_tree.swap(tmp_wt);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);

@@ -23,11 +23,15 @@ class FmIndexEngine:
 
     def get_doc_by_rank(self, s: int, rank: int, needle_len: int, max_ctx_len: int) -> FmEngineResponse[DocResponse]:
         result = self.engine.get_doc_by_rank(s, rank, needle_len, max_ctx_len)
+        try:
+            text = result.text
+        except:
+            return {'error': 'Failed to decode document text with UTF-8. This is likely because the context was cut off in the middle of a multi-byte char. Please try with a different max context length.'}
         return {
             'doc_ix': result.doc_ix,
             'doc_len': result.doc_len,
             'disp_len': result.disp_len,
             'needle_offset': result.needle_offset,
-            'meta': cast(str, result.meta.decode('utf-8')),
-            'data': cast(str, result.data.decode('utf-8'))
+            'metadata': result.metadata,
+            'text': result.text,
         }
