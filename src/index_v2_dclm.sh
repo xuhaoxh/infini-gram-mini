@@ -29,8 +29,8 @@ gantry run \
     IFS=$'\n\t'; \
     conda shell.bash activate base; \
     git checkout dclm; \
-    cd suffix_array; cargo build --release; mv target/release/rust_indexing ../src/rust_indexing; cd ..; \
     sudo apt-get update; sudo apt-get install -y gcc; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh; source \$HOME/.cargo/env; \
+    cd suffix_array; cargo build --release; mv target/release/rust_indexing ../src/rust_indexing; cd ..; \
     conda install isl=0.12.2 mpc=1.0.3 mpfr=3.1.4; \
     export LD_LIBRARY_PATH=/opt/conda/lib:\$LD_LIBRARY_PATH; \
     conda install psi4::gcc-5=5.2.0; \
