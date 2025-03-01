@@ -21,7 +21,10 @@ class Processor:
         assert 'load_to_ram' in config
         assert 'get_metadata' in config
 
+        start_time = time.time()
         self.engine = FmIndexEngine(index_dirs=config['index_dirs'], load_to_ram=config['load_to_ram'], get_metadata=config['get_metadata'])
+        end_time = time.time()
+        print(f'Loaded index "{config["name"]}" in {end_time - start_time:.3f} seconds')
 
     def process(self, query_type, query, **kwargs):
         if type(query) != str:

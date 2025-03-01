@@ -61,8 +61,6 @@ public:
     Engine (const vector<string> index_dirs, bool load_to_ram, bool get_metadata)
             : _load_to_ram(load_to_ram), _get_metadata(get_metadata) {
 
-        auto start_time = high_resolution_clock::now();
-
         for (const auto &index_dir : index_dirs) {
             assert (fs::exists(index_dir));
 
@@ -104,10 +102,6 @@ public:
             auto shard = FMIndexShard{data_index, data_offset, meta_index, meta_offset, doc_cnt};
             _shards.push_back(shard);
         }
-
-        auto end_time = high_resolution_clock::now();
-        auto load_time = duration_cast<milliseconds>(end_time - start_time).count();
-        cout << "Load time: " << load_time / 1000.00 << " s." << endl;
 
         _num_shards = _shards.size();
         assert(_num_shards > 0);

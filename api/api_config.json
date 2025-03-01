@@ -6,5 +6,13 @@
         ],
         "load_to_ram": false,
         "get_metadata": true
+    },
+    {
+        "name": "v2_dclm_f1_s1",
+        "index_dirs": [
+            "/data_v2_pile/v2_dclm_f1_s1"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
     }
 ]
