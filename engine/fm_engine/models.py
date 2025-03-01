@@ -18,5 +18,6 @@ class DocResponse(TypedDict):
     doc_len: int
     disp_len: int
     needle_offset: int
-    meta: str
-    data: str
+    metadata: str
+    text: str
+

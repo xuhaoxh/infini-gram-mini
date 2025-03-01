@@ -1,26 +1,10 @@
 [
     {
-        "name": "pileval",
-        "dir": "/data_pile/pileval",
+        "name": "v2_pileval",
+        "index_dirs": [
+            "/data_v2_pile/v2_pileval"
+        ],
         "load_to_ram": false,
-        "get_metadata": false
-    },
-    {
-        "name": "piletrain",
-        "dir": "/data_pile/piletrain",
-        "load_to_ram": false,
-        "get_metadata": false
-    },
-    {
-        "name": "dclm_1",
-        "dir": "/data_pile/dclm_1",
-        "load_to_ram": false,
-        "get_metadata": false
-    },
-    {
-        "name": "dclm",
-        "dir": "/data_dclm/dclm_f1_all",
-        "load_to_ram": false,
-        "get_metadata": false
+        "get_metadata": true
     }
 ]

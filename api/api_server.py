@@ -17,11 +17,11 @@ args = parser.parse_args()
 class Processor:
 
     def __init__(self, config):
-        assert 'dir' in config
+        assert 'index_dirs' in config
         assert 'load_to_ram' in config
         assert 'get_metadata' in config
 
-        self.engine = FmIndexEngine(index_dir=config['dir'], load_to_ram=config['load_to_ram'], get_metadata=config['get_metadata'])
+        self.engine = FmIndexEngine(index_dirs=config['index_dirs'], load_to_ram=config['load_to_ram'], get_metadata=config['get_metadata'])
 
     def process(self, query_type, query, **kwargs):
         if type(query) != str:
@@ -37,8 +37,11 @@ class Processor:
     def count(self, query):
         return self.engine.count(query=query)
 
-    def reconstruct(self, query, num_occ, pre_text, post_text):
-        result = self.engine.reconstruct(query=query, num_occ=num_occ, pre_text=pre_text, post_text=post_text)
+    def find(self, query):
+        return self.engine.find(query=query)
+
+    def get_doc_by_rank(self, query, s, rank, max_ctx_len):
+        result = self.engine.get_doc_by_rank(s=s, rank=rank, needle_len=len(query), max_ctx_len=max_ctx_len)
 
         if 'error' in result:
             return result
@@ -54,7 +57,7 @@ class Processor:
                     haystack = span[0]
                     new_spans += self._replace(haystack, needle, label='0')
             spans = new_spans
-        result = {'spans': spans, 'metadata': result['metadata']}
+        result['spans'] = spans
 
         return result
 
