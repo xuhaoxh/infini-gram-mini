@@ -1,5 +1,7 @@
 **/__pycache__/
 src/construct
+src/cpp_indexing
+src/rust_indexing
 engine/fm_engine/*.so
 engine/engine_test/cpp_engine_test
 data/
