@@ -29,14 +29,11 @@ gantry run \
     IFS=$'\n\t'; \
     conda shell.bash activate base; \
     git checkout dclm; \
-    sudo apt-get update; sudo apt-get install -y gcc; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh; source \$HOME/.cargo/env; \
-    cd suffix_array; cargo build --release; mv target/release/rust_indexing ../src/rust_indexing; cd ..; \
     conda install isl=0.12.2 mpc=1.0.3 mpfr=3.1.4; \
     export LD_LIBRARY_PATH=/opt/conda/lib:\$LD_LIBRARY_PATH; \
     conda install psi4::gcc-5=5.2.0; \
     pip install zstandard numpy tqdm; \
     cd src; \
-    GCILK=true g++ -std=c++11 -I../parallel_sdsl/include -L../parallel_sdsl/lib indexing.cpp -o cpp_indexing -lsdsl -ldivsufsort -ldivsufsort64 -DCILKP -fcilkplus -O2; \
     python indexing.py \
       --data_path /weka/oe-data-default/ai2-llm/pretraining-data/sources/olmo-mix/olmoe-mix-0924/data/dclm/dclm-0000.json.zst \
       --data_path /weka/oe-data-default/ai2-llm/pretraining-data/sources/olmo-mix/olmoe-mix-0924/data/dclm/dclm-0001.json.zst \
