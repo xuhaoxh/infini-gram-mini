@@ -115,7 +115,7 @@ def build_sa_bwt(args, mode):
     ds_size = os.path.getsize(ds_path)
     mem_bytes = args.mem * 1024**3
     num_job_batches = 1
-    while num_job_batches * (mem_bytes // 8) < ds_size:
+    while num_job_batches * (mem_bytes // 10) < ds_size:
         num_job_batches *= 2
     parallel_jobs = args.cpus
     total_jobs = num_job_batches * parallel_jobs
