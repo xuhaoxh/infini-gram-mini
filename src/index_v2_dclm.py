@@ -11,10 +11,10 @@ def main():
 
     for s in range(25):
         save_dir = f'/weka/oe-training-default/jiachengl/hf-fm/index/v2_dclm_all/{s:02d}'
-        if os.path.exists(save_dir):
-            print(f'Index shard {s:02d} already exists. Skipping.')
+        if os.path.exists(save_dir) and os.path.exists(f'{save_dir}/data.fm9') and os.path.exists(f'{save_dir}/meta.fm9'):
+            print(f'Index shard {s:02d} already exists. Skipping.', flush=True)
             continue
-        print(f'Index shard {s:02d} does not exist. Creating ...')
+        print(f'Index shard {s:02d} does not exist. Creating ...', flush=True)
         os.makedirs(save_dir, exist_ok=True)
         data_dir = os.path.join(os.getcwd(), f'dclm_s{s:02d}') # this is an ephemeral directory
         os.makedirs(data_dir, exist_ok=True)
@@ -22,12 +22,12 @@ def main():
         for shard_ix in tqdm(list(range(s * 4, (s + 1) * 4))):
             global_shard_ix = shard_ix // 10 + 1
             local_shard_ix = shard_ix % 10
-            print(f'Downloading data from s3: global_shard_ix={global_shard_ix}, local_shard_ix={local_shard_ix}')
+            print(f'Downloading data from s3: global_shard_ix={global_shard_ix}, local_shard_ix={local_shard_ix}', flush=True)
             dir = f'{data_dir}/global-shard_{global_shard_ix:02d}_of_10/local-shard_{local_shard_ix:02d}_of_10'
             os.makedirs(dir, exist_ok=True)
             process = subprocess.Popen(f'aws s3 cp --recursive s3://ai2-llm/pretraining-data/sources/dclm/baseline/documents/global-shard_{global_shard_ix:02d}_of_10/local-shard_{local_shard_ix:01d}_of_10 {dir}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
             process.wait()
-            print(f'Downloaded. Total size: {os.popen(f"du -sh {dir}").read()}')
+            print(f'Downloaded. Total size: {os.popen(f"du -sh {dir}").read()}', flush=True)
 
         parser = argparse.ArgumentParser()
         parser.add_argument('--doc_sep', type=bytes, default=b'\xff')
@@ -50,7 +50,7 @@ def main():
         build_sa_bwt(args, mode='data')
         build_sa_bwt(args, mode='meta')
         format_file(args)
-        print(os.popen(f'./cpp_indexing {args.save_dir}').read())
+        print(os.popen(f'./cpp_indexing {args.save_dir}').read(), flush=True)
 
 if __name__ == '__main__':
     main()

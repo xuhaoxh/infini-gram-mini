@@ -49,10 +49,10 @@ def prepare(args):
     mt_path = os.path.join(args.save_dir, f'meta')
     om_path = os.path.join(args.save_dir, f'meta_offset')
     if all([os.path.exists(path) for path in [ds_path, od_path, mt_path, om_path]]):
-        print('Step 1 (prepare): Skipped. All files already exist.')
+        print('Step 1 (prepare): Skipped. All files already exist.', flush=True)
         return
 
-    print('Step 1 (prepare): Starting ...')
+    print('Step 1 (prepare): Starting ...', flush=True)
     start_time = time.time()
 
     data_paths = glob.glob(f'{args.data_dir}/**/*.json*', recursive=True)
@@ -64,10 +64,10 @@ def prepare(args):
     with mp.get_context('fork').Pool(args.cpus) as p:
         od = 0
         om = 0
-        for data_path in tqdm(data_paths):
+        for data_path in data_paths:
             rel_data_path = data_path[len(args.data_dir)+1:]
             lines = load_file(data_path)
-            for offset in tqdm(range(0, len(lines), args.batch_size), total=len(range(0, len(lines), args.batch_size))):
+            for offset in range(0, len(lines), args.batch_size):
                 batch_lines = lines[offset:min(offset+args.batch_size, len(lines))]
                 results = p.starmap(parse_line, [(line, args.doc_sep, rel_data_path, offset+i) for i, line in enumerate(batch_lines)])
                 for i, (data, meta) in enumerate(results):
@@ -92,7 +92,7 @@ def prepare(args):
     om_fout.close()
 
     end_time = time.time()
-    print(f'Step 1 (prepare): Done. Took {end_time-start_time:.2f} seconds')
+    print(f'Step 1 (prepare): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
 def build_sa_bwt(args, mode):
 
@@ -100,27 +100,27 @@ def build_sa_bwt(args, mode):
     sa_path = ds_path + '_sa'
     bwt_path = ds_path + '_bwt'
     if os.path.exists(sa_path) and os.path.exists(bwt_path):
-        print(f'Step 2 (build_sa_bwt): Skipped. SA and BWT file already exists.')
+        print(f'Step 2 (build_sa_bwt): Skipped. SA and BWT file already exists.', flush=True)
         return
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-    print('Step 2 (build_sa_bwt): Starting ...')
+    print('Step 2 (build_sa_bwt): Starting ...', flush=True)
     start_time_all = time.time()
 
     # -------- Step 2.1 (make-part) -------- #
 
-    print(f'Step 2.1 (make-part): Starting ...')
+    print(f'\tStep 2.1 (make-part): Starting ...', flush=True)
     start_time = time.time()
 
     ds_size = os.path.getsize(ds_path)
     mem_bytes = args.mem * 1024**3
     num_job_batches = 1
-    while num_job_batches * (mem_bytes // 10) < ds_size:
+    while num_job_batches * (mem_bytes // 12) < ds_size:
         num_job_batches *= 2
     parallel_jobs = args.cpus
     total_jobs = num_job_batches * parallel_jobs
-    print(f'Using {num_job_batches} batches of {parallel_jobs} jobs each, for a total of {total_jobs} jobs.')
+    # print(f'Using {num_job_batches} batches of {parallel_jobs} jobs each, for a total of {total_jobs} jobs.', flush=True)
 
     S = ds_size // total_jobs
 
@@ -129,7 +129,7 @@ def build_sa_bwt(args, mode):
     os.makedirs(parts_dir)
 
     ranges, files = [], []
-    for batch_start in tqdm(list(range(0, total_jobs, parallel_jobs))):
+    for batch_start in range(0, total_jobs, parallel_jobs):
         batch_end = min(batch_start+parallel_jobs, total_jobs)
         batch_ranges, batch_files = [], []
         for i in range(batch_start, batch_end):
@@ -138,18 +138,17 @@ def build_sa_bwt(args, mode):
             batch_files.append(os.path.join(parts_dir, f'{s}-{e}'))
         ranges += batch_ranges
         files += batch_files
-        wait = []
+        pipes = []
         for (s, e) in batch_ranges:
-            cmd = f'./rust_indexing make-part --data-file {ds_path} --parts-dir {parts_dir} --start-byte {s} --end-byte {e}'
-            wait.append(os.popen(cmd))
-        [x.read() for x in wait]
+            pipes.append(os.popen(f'./rust_indexing make-part --data-file {ds_path} --parts-dir {parts_dir} --start-byte {s} --end-byte {e}'))
+        [pipe.read() for pipe in pipes]
 
     end_time = time.time()
-    print(f'Step 2.1 (make-part): Done. Took {end_time-start_time:.2f} seconds')
+    print(f'\tStep 2.1 (make-part): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
     # -------- Step 2.2 (merge) -------- #
 
-    print(f'Step 2.2 (merge): Starting ...')
+    print(f'\tStep 2.2 (merge): Starting ...', flush=True)
     start_time = time.time()
 
     merged_dir = os.path.join(args.temp_dir, f'merged')
@@ -159,21 +158,16 @@ def build_sa_bwt(args, mode):
     shutil.rmtree(bwt_dir, ignore_errors=True)
     os.makedirs(bwt_dir)
 
-    cmd = f'./rust_indexing merge --merged-dir {merged_dir} --bwt-dir {bwt_dir} --suffix-path {" --suffix-path ".join(files)} --num-threads {args.cpus} --hacksize {HACK}'
-    pipe = os.popen(cmd)
-    output = pipe.read()
-    if pipe.close() is not None:
-        print('Something went wrong with merging.')
-        exit(1)
+    os.popen(f'./rust_indexing merge --merged-dir {merged_dir} --bwt-dir {bwt_dir} --suffix-path {" --suffix-path ".join(files)} --num-threads {args.cpus} --hacksize {HACK}').read()
 
     shutil.rmtree(parts_dir)
 
     end_time = time.time()
-    print(f'Step 2.2 (merge): Done. Took {end_time-start_time:.2f} seconds')
+    print(f'\tStep 2.2 (merge): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
     # -------- Step 2.3 (concat) -------- #
 
-    print(f'Step 2.3 (concat): Starting ...')
+    print(f'\tStep 2.3 (concat): Starting ...', flush=True)
     start_time = time.time()
 
     os.popen(f'cat {merged_dir}/* > {sa_path}').read()
@@ -182,24 +176,24 @@ def build_sa_bwt(args, mode):
     shutil.rmtree(bwt_dir)
 
     end_time = time.time()
-    print(f'Step 2.3 (concat): Done. Took {end_time-start_time:.2f} seconds')
+    print(f'\tStep 2.3 (concat): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
     # -------- Step 2.4 (verify) -------- #
 
     if not os.path.exists(sa_path):
-        print('Failed to create SA')
+        print('Failed to create SA', flush=True)
         exit(1)
 
     sa_size = os.path.getsize(sa_path)
     if sa_size % ds_size != 0:
-        print('SA file size is wrong')
+        print('SA file size is wrong', flush=True)
         exit(1)
 
     end_time_all = time.time()
-    print(f'Step 2 (build_sa_bwt): Done. Took {end_time_all-start_time_all:.2f} seconds')
+    print(f'Step 2 (build_sa_bwt): Done. Took {end_time_all-start_time_all:.2f} seconds', flush=True)
 
 def format_file(args):
-    print('Step 3 (format_file): Starting ...')
+    print('Step 3 (format_file): Starting ...', flush=True)
     start_time = time.time()
 
     for mode in ['data', 'meta']:
@@ -238,7 +232,7 @@ def format_file(args):
         os.remove(bwt_path)
 
     end_time = time.time()
-    print(f'Step 3 (format_file): Done. Took {end_time-start_time:.2f} seconds')
+    print(f'Step 3 (format_file): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
 def main():
 
@@ -272,7 +266,7 @@ def main():
     build_sa_bwt(args, mode='data')
     build_sa_bwt(args, mode='meta')
     format_file(args)
-    print(os.popen(f'./cpp_indexing {args.save_dir}').read())
+    print(os.popen(f'./cpp_indexing {args.save_dir}').read(), flush=True)
 
 if __name__ == '__main__':
     main()
