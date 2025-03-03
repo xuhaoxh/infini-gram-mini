@@ -8,7 +8,7 @@ from indexing import prepare, build_sa_bwt, format_file
 
 def main():
 
-    for s in range(20):
+    for s in range(25):
         save_dir = f'/weka/oe-training-default/jiachengl/hf-fm/index/v2_dclm_all/{s:02d}'
         if os.path.exists(save_dir):
             print(f'Index shard {s:02d} already exists. Skipping.')
@@ -18,10 +18,9 @@ def main():
         data_dir = os.path.join(os.getcwd(), f'dclm_s{s:02d}') # this is an ephemeral directory
         os.makedirs(data_dir, exist_ok=True)
 
-        global_shard_ix = s // 2 + 1
-        local_shard_ix_begin = s % 2 * 5
-        local_shard_ix_end = local_shard_ix_begin + 5
-        for local_shard_ix in tqdm(list(range(local_shard_ix_begin, local_shard_ix_end))):
+        for shard_ix in tqdm(list(range(s * 4, (s + 1) * 4))):
+            global_shard_ix = shard_ix // 10 + 1
+            local_shard_ix = shard_ix % 10
             print(f'Downloading data from s3: global_shard_ix={global_shard_ix}, local_shard_ix={local_shard_ix}')
             dir = f'{data_dir}/global-shard_{global_shard_ix:02d}_of_10/local-shard_{local_shard_ix:02d}_of_10'
             os.makedirs(dir, exist_ok=True)
