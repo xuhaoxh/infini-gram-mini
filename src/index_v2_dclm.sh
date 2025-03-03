@@ -36,5 +36,5 @@ gantry run \
     conda install psi4::gcc-5=5.2.0; \
     pip install zstandard numpy tqdm awscli; \
     cd src; \
-    python indexing.py --cpus 186 --mem 1860; \
+    python index_v2_dclm.py --cpus 186 --mem 1860; \
     "
