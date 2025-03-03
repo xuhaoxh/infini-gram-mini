@@ -18,7 +18,7 @@ def load_file(path):
     if path.endswith('.gz'):
         with gzip.open(path, 'rt', encoding='utf-8') as f:
             lines = f.readlines()
-    elif path.endswith('.zst'):
+    elif path.endswith('.zst') or path.endswith('.zstd'):
         with open(path, 'rb') as f:
             import zstandard as zstd
             dctx = zstd.ZstdDecompressor()
@@ -55,7 +55,8 @@ def prepare(args):
     print('Step 1 (prepare): Starting ...')
     start_time = time.time()
 
-    data_paths = args.data_path
+    data_paths = glob.glob(f'{args.data_dir}/**/*.json*', recursive=True)
+    data_paths = list(sorted(data_paths))
     ds_fout = open(ds_path, 'wb')
     od_fout = open(od_path, 'wb')
     mt_fout = open(mt_path, 'wb')
@@ -64,8 +65,9 @@ def prepare(args):
         od = 0
         om = 0
         for data_path in tqdm(data_paths):
-            rel_data_path = data_path.split('/')[-1]
+            rel_data_path = data_path[len(args.data_dir)+1:]
             lines = load_file(data_path)
+            print(lines[0])
             for offset in tqdm(range(0, len(lines), args.batch_size), total=len(range(0, len(lines), args.batch_size))):
                 batch_lines = lines[offset:min(offset+args.batch_size, len(lines))]
                 results = p.starmap(parse_line, [(line, args.doc_sep, rel_data_path, offset+i) for i, line in enumerate(batch_lines)])
@@ -242,8 +244,7 @@ def format_file(args):
 def main():
 
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--data_dir', type=str, required=True, help='Directory containing the raw text corpus. Must be absolute path.')
-    parser.add_argument('--data_path', type=str, nargs='+', required=True, help='Path to the raw text corpus. Can be a list of paths. Must be absolute path.')
+    parser.add_argument('--data_dir', type=str, required=True, help='Directory containing the raw text corpus. Must be absolute path.')
     parser.add_argument('--temp_dir', type=str, default=None, help='Directory where temporary indexing files are stored. Must be absolute path.')
     parser.add_argument('--save_dir', type=str, required=True, help='Directory where the final index files are stored. Must be absolute path.')
     parser.add_argument('--doc_sep', type=bytes, default=b'\xff')
@@ -254,13 +255,14 @@ def main():
     args = parser.parse_args()
     if args.temp_dir is None:
         args.temp_dir = args.save_dir
+    args.data_dir = args.data_dir.rstrip('/')
     args.temp_dir = args.temp_dir.rstrip('/')
     args.save_dir = args.save_dir.rstrip('/')
 
     assert args.batch_size > 0
     assert args.cpus > 0
 
-    assert all([os.path.exists(path) for path in args.data_path])
+    assert os.path.exists(args.data_dir)
     os.makedirs(args.temp_dir, exist_ok=True)
     os.makedirs(args.save_dir, exist_ok=True)
 
@@ -271,7 +273,6 @@ def main():
     build_sa_bwt(args, mode='data')
     build_sa_bwt(args, mode='meta')
     format_file(args)
-
     print(os.popen(f'./cpp_indexing {args.save_dir}').read())
 
 if __name__ == '__main__':
