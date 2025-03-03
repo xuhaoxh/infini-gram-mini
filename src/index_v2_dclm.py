@@ -25,8 +25,7 @@ def main():
             print(f'Downloading data from s3: global_shard_ix={global_shard_ix}, local_shard_ix={local_shard_ix}')
             dir = f'{data_dir}/global-shard_{global_shard_ix:02d}_of_10/local-shard_{local_shard_ix:02d}_of_10'
             os.makedirs(dir, exist_ok=True)
-            # send stdout to /dev/null
-            process = subprocess.Popen(f'aws s3 cp --recursive s3://ai2-llm/pretraining-data/sources/dclm/baseline/documents/global-shard_{global_shard_ix:02d}_of_10/local-shard_{local_shard_ix:01d}_of_10 {dir}', stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            process = subprocess.Popen(f'aws s3 cp --recursive s3://ai2-llm/pretraining-data/sources/dclm/baseline/documents/global-shard_{global_shard_ix:02d}_of_10/local-shard_{local_shard_ix:01d}_of_10 {dir}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
             process.wait()
             print(f'Downloaded. Total size: {os.popen(f"du -sh {dir}").read()}')
 

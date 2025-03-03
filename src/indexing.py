@@ -67,7 +67,6 @@ def prepare(args):
         for data_path in tqdm(data_paths):
             rel_data_path = data_path[len(args.data_dir)+1:]
             lines = load_file(data_path)
-            print(lines[0])
             for offset in tqdm(range(0, len(lines), args.batch_size), total=len(range(0, len(lines), args.batch_size))):
                 batch_lines = lines[offset:min(offset+args.batch_size, len(lines))]
                 results = p.starmap(parse_line, [(line, args.doc_sep, rel_data_path, offset+i) for i, line in enumerate(batch_lines)])
