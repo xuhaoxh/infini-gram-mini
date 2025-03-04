@@ -49,8 +49,10 @@
 use std::path::Path;
 use std::time::Instant;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::BufReader;
+use std::io::SeekFrom;
 use std::fs::File;
 use std::io::prelude::*;
 use std::cmp::Reverse;
@@ -148,7 +150,11 @@ enum Commands {
         #[clap(short, long)]
         merged_dir: String,
         #[clap(short, long)]
+        merged_file: String,
+        #[clap(short, long)]
         bwt_dir: String,
+        #[clap(short, long)]
+        bwt_file: String,
         #[clap(short, long, default_value_t = 8)]
         num_threads: i64,
         #[clap(long, default_value_t = 100000)]
@@ -903,7 +909,7 @@ impl<'a> PartialOrd for MergeState<'a> {
  * will work out correctly. (I did call it hacksize after all.....)
  * In practice this works. It may not for your use case if there are long duplicates.
  */
- fn cmd_merge(fpath: &String, parts_dir: &String, merged_dir: &String, bwt_dir: &String, num_threads: i64, hacksize: usize, ratio: usize)  -> std::io::Result<()> {
+ fn cmd_merge(fpath: &String, parts_dir: &String, merged_dir: &String, merged_file: &String, bwt_dir: &String, bwt_file: &String, num_threads: i64, hacksize: usize, ratio: usize)  -> std::io::Result<()> {
 
     let mut part_files:Vec<String> = glob(&format!("{}/*", parts_dir)).unwrap().map(|x| x.unwrap()).map(|x| x.to_str().unwrap().to_string()).collect();
     part_files.sort_by(|a, b| {
@@ -1102,12 +1108,76 @@ impl<'a> PartialOrd for MergeState<'a> {
         }
     });
 
-    // println!("Finish writing");
-    // let mut buffer = File::create(output_file)?;
-    // for i in 0..texts.len()-1 {
-    //     buffer.write_all(&texts[i][..texts[i].len()-HACKSIZE])?;
-    // }
-    // buffer.write_all(&texts[texts.len()-1])?;
+    // Concat the merged files
+
+    let mut ds_file = fs::File::open(fpath.clone()).unwrap();
+    let mut ds_header_buf = [0u8; 8];
+    ds_file.read_exact(&mut ds_header_buf).unwrap();
+    let ds_size_in_bits = u64::from_le_bytes(ds_header_buf);
+    let ds_size_in_bytes = ds_size_in_bits / 8;
+
+    let mut merged_buf = OpenOptions::new().write(true).create(true).open(merged_file).unwrap();
+    let mut merged_buf_size = ds_size_in_bytes * ratio as u64;
+    if merged_buf_size % 8 != 0 {
+        merged_buf_size += 8 - (merged_buf_size % 8);
+    }
+    merged_buf_size += 9;
+    merged_buf.set_len(merged_buf_size).unwrap();
+    merged_buf.seek(SeekFrom::End(-8)).expect("Seek failed!");
+    merged_buf.write_all(&[0u8; 8]).expect("Write OK");
+    merged_buf.seek(SeekFrom::Start(0)).expect("Seek failed!");
+    let merged_size_in_bits = ds_size_in_bits * ratio as u64;
+    merged_buf.write_all(&merged_size_in_bits.to_le_bytes()).expect("Write OK");
+    merged_buf.write_all(&((ratio * 8) as u8).to_le_bytes()).expect("Write OK");
+    drop(merged_buf);
+
+    let mut bwt_buf = OpenOptions::new().write(true).create(true).open(bwt_file).unwrap();
+    let mut bwt_buf_size = ds_size_in_bytes;
+    if bwt_buf_size % 8 != 0 {
+        bwt_buf_size += 8 - (bwt_buf_size % 8);
+    }
+    bwt_buf_size += 8;
+    bwt_buf.set_len(bwt_buf_size).unwrap();
+    bwt_buf.seek(SeekFrom::End(-8)).expect("Seek failed!");
+    bwt_buf.write_all(&[0u8; 8]).expect("Write OK");
+    bwt_buf.seek(SeekFrom::Start(0)).expect("Seek failed!");
+    bwt_buf.write_all(&ds_size_in_bits.to_le_bytes()).expect("Write OK");
+    drop(bwt_buf);
+
+    fn cat_worker(part: usize, merged_dir: String, merged_file: String, merged_offset: u64, bwt_dir: String, bwt_file: String, bwt_offset: u64) {
+        let mut buffer = vec![0u8; 32*1024*1024];
+
+        let mut merged = std::io::BufWriter::new(OpenOptions::new().write(true).open(merged_file).unwrap());
+        merged.seek(SeekFrom::Start(merged_offset)).expect("Seek failed!");
+        let merged_part_file = format!("{}/{:04}", merged_dir, part);
+        let mut merged_part = std::io::BufReader::new(fs::File::open(merged_part_file).unwrap());
+        while let Ok(n) = merged_part.read(&mut buffer) {
+            if n == 0 { break; }
+            merged.write_all(&buffer[..n]).expect("Write OK");
+        }
+
+        let mut bwt = std::io::BufWriter::new(OpenOptions::new().write(true).open(bwt_file).unwrap());
+        bwt.seek(SeekFrom::Start(bwt_offset)).expect("Seek failed!");
+        let bwt_part_file = format!("{}/{:04}", bwt_dir, part);
+        let mut bwt_part = std::io::BufReader::new(fs::File::open(bwt_part_file).unwrap());
+        while let Ok(n) = bwt_part.read(&mut buffer) {
+            if n == 0 { break; }
+            bwt.write_all(&buffer[..n]).expect("Write OK");
+        }
+    }
+
+    let _answer = crossbeam::scope(|scope| {
+        let mut merged_offset = 9;
+        let mut bwt_offset = 8;
+        for i in 0..num_threads as usize {
+            let _one_result = scope.spawn(move || {
+                cat_worker(i, (*merged_dir).clone(), (*merged_file).clone(), merged_offset, (*bwt_dir).clone(), (*bwt_file).clone(), bwt_offset);
+            });
+            merged_offset += std::fs::metadata(format!("{}/{:04}", merged_dir, i)).unwrap().len();
+            bwt_offset += std::fs::metadata(format!("{}/{:04}", bwt_dir, i)).unwrap().len();
+        }
+    });
+
     Ok(())
 }
 
@@ -1267,8 +1337,8 @@ fn main()  -> std::io::Result<()> {
                                *num_threads)?;
         }
 
-        Commands::Merge { data_file, parts_dir, merged_dir, bwt_dir, num_threads, hacksize, ratio } => {
-            cmd_merge(data_file, parts_dir, merged_dir, bwt_dir, *num_threads, *hacksize, *ratio)?;
+        Commands::Merge { data_file, parts_dir, merged_dir, merged_file, bwt_dir, bwt_file, num_threads, hacksize, ratio } => {
+            cmd_merge(data_file, parts_dir, merged_dir, merged_file, bwt_dir, bwt_file, *num_threads, *hacksize, *ratio)?;
         }
 
         Commands::Collect { data_file, cache_dir, length_threshold } => {

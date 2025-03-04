@@ -113,8 +113,8 @@ def prepare(args):
 def build_sa_bwt(args, mode):
 
     ds_path = os.path.join(args.save_dir, f'text_{mode}.sdsl')
-    sa_path = os.path.join(args.save_dir, f'{mode}_sa')
-    bwt_path = os.path.join(args.save_dir, f'{mode}_bwt')
+    sa_path = os.path.join(args.save_dir, f'sa_{mode}.sdsl')
+    bwt_path = os.path.join(args.save_dir, f'bwt_{mode}.sdsl')
     if os.path.exists(sa_path) and os.path.exists(bwt_path):
         print(f'Step 2 (build_sa_bwt): Skipped. SA and BWT file already exists.', flush=True)
         return
@@ -176,91 +176,21 @@ def build_sa_bwt(args, mode):
     shutil.rmtree(bwt_dir, ignore_errors=True)
     os.makedirs(bwt_dir)
 
-    pipe = os.popen(f'./rust_indexing merge --data-file {ds_path} --parts-dir {parts_dir} --merged-dir {merged_dir} --bwt-dir {bwt_dir} --num-threads {args.cpus} --hacksize {HACK} --ratio {ratio}')
+    pipe = os.popen(f'./rust_indexing merge --data-file {ds_path} --parts-dir {parts_dir} --merged-dir {merged_dir} --merged-file {sa_path} --bwt-dir {bwt_dir} --bwt-file {bwt_path} --num-threads {args.cpus} --hacksize {HACK} --ratio {ratio}')
     pipe.read()
     if pipe.close() is not None:
         print('\tStep 2.2 (merge): Something went wrong', flush=True)
         exit(1)
 
     shutil.rmtree(parts_dir)
+    shutil.rmtree(merged_dir)
+    shutil.rmtree(bwt_dir)
 
     end_time = time.time()
     print(f'\tStep 2.2 (merge): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
-    # -------- Step 2.3 (concat) -------- #
-
-    print(f'\tStep 2.3 (concat): Starting ...', flush=True)
-    start_time = time.time()
-
-    os.popen(f'cat {merged_dir}/* > {sa_path}').read()
-    shutil.rmtree(merged_dir)
-    os.popen(f'cat {bwt_dir}/* > {bwt_path}').read()
-    shutil.rmtree(bwt_dir)
-
-    if not os.path.exists(sa_path):
-        print('Failed to create SA', flush=True)
-        exit(1)
-    sa_size = os.path.getsize(sa_path)
-    if sa_size != ds_size * ratio:
-        print('SA file size is wrong', flush=True)
-        exit(1)
-    if not os.path.exists(bwt_path):
-        print('Failed to create BWT', flush=True)
-        exit(1)
-    bwt_size = os.path.getsize(bwt_path)
-    if bwt_size != ds_size:
-        print('BWT file size is wrong', flush=True)
-        exit(1)
-
-    end_time = time.time()
-    print(f'\tStep 2.3 (concat): Done. Took {end_time-start_time:.2f} seconds', flush=True)
-
     end_time_all = time.time()
     print(f'Step 2 (build_sa_bwt): Done. Took {end_time_all-start_time_all:.2f} seconds', flush=True)
-
-def format_file(args):
-    print('Step 3 (format_file): Starting ...', flush=True)
-    start_time = time.time()
-
-    for mode in ['data', 'meta']:
-        ds_path = os.path.join(args.save_dir, f'text_{mode}.sdsl')
-        with open(ds_path, 'rb') as ds_f:
-            ds_bytes = int.from_bytes(ds_f.read(8), 'little') // 8
-        # ds_path_new = os.path.join(args.save_dir, f'text_{mode}.sdsl')
-        # ds_bytes = os.path.getsize(ds_path)
-        # with open(ds_path_new, 'wb') as ds_fout:
-        #     ds_fout.write(np.array([ds_bytes * 8], dtype=np.uint64).view(np.uint8).tobytes())
-        # os.popen(f'cat {ds_path} >> {ds_path_new}').read()
-        # with open(ds_path_new, 'ab') as ds_fout:
-        #     if ds_bytes % 8 != 0:
-        #         ds_fout.write(b'\00' * (8 - ds_bytes % 8))
-        # os.remove(ds_path)
-
-        sa_path = os.path.join(args.save_dir, f'{mode}_sa')
-        sa_path_new = os.path.join(args.save_dir, f'sa_{mode}.sdsl')
-        sa_bytes = os.path.getsize(sa_path)
-        with open(sa_path_new, 'wb') as sa_fout:
-            sa_fout.write(np.array([sa_bytes * 8], dtype=np.uint64).view(np.uint8).tobytes())
-            sa_fout.write(np.array([sa_bytes // ds_bytes * 8], dtype=np.uint8).tobytes())
-        os.popen(f'cat {sa_path} >> {sa_path_new}').read()
-        with open(sa_path_new, 'ab') as sa_fout:
-            if sa_bytes % 8 != 0:
-                sa_fout.write(b'\00' * (8 - sa_bytes % 8))
-        os.remove(sa_path)
-
-        bwt_path = os.path.join(args.save_dir, f'{mode}_bwt')
-        bwt_path_new = os.path.join(args.save_dir, f'bwt_{mode}.sdsl')
-        bwt_bytes = os.path.getsize(bwt_path)
-        with open(bwt_path_new, 'wb') as bwt_fout:
-            bwt_fout.write(np.array([bwt_bytes * 8], dtype=np.uint64).view(np.uint8).tobytes())
-        os.popen(f'cat {bwt_path} >> {bwt_path_new}').read()
-        with open(bwt_path_new, 'ab') as bwt_fout:
-            if bwt_bytes % 8 != 0:
-                bwt_fout.write(b'\00' * (8 - bwt_bytes % 8))
-        os.remove(bwt_path)
-
-    end_time = time.time()
-    print(f'Step 3 (format_file): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
 def main():
 
@@ -293,7 +223,6 @@ def main():
     prepare(args)
     build_sa_bwt(args, mode='data')
     build_sa_bwt(args, mode='meta')
-    format_file(args)
     print(os.popen(f'./cpp_indexing {args.save_dir}').read(), flush=True)
 
 if __name__ == '__main__':
