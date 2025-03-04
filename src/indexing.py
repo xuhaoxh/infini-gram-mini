@@ -44,9 +44,9 @@ def parse_line(line, doc_sep, path, linenum):
 
 def prepare(args):
 
-    ds_path = os.path.join(args.save_dir, f'data')
+    ds_path = os.path.join(args.save_dir, f'text_data.sdsl')
     od_path = os.path.join(args.save_dir, f'data_offset')
-    mt_path = os.path.join(args.save_dir, f'meta')
+    mt_path = os.path.join(args.save_dir, f'text_meta.sdsl')
     om_path = os.path.join(args.save_dir, f'meta_offset')
     if all([os.path.exists(path) for path in [ds_path, od_path, mt_path, om_path]]):
         print('Step 1 (prepare): Skipped. All files already exist.', flush=True)
@@ -61,6 +61,11 @@ def prepare(args):
     od_fout = open(od_path, 'wb')
     mt_fout = open(mt_path, 'wb')
     om_fout = open(om_path, 'wb')
+
+    # write a placeholder header
+    ds_fout.write(np.array([0], dtype=np.uint64).view(np.uint8).tobytes())
+    mt_fout.write(np.array([0], dtype=np.uint64).view(np.uint8).tobytes())
+
     with mp.get_context('fork').Pool(args.cpus) as p:
         od = 0
         om = 0
@@ -83,8 +88,19 @@ def prepare(args):
             gc.collect()
     gc.collect()
 
-    ds_fout.write(b'\xfa') # append one zero byte to the end of the file
-    mt_fout.write(b'\xfa') # append one zero byte to the end of the file
+    # append one zero byte to the end of the file, pad to 8 bytes, and overwrite the header
+    ds_fout.write(b'\xfa')
+    ds_size = ds_fout.tell() - 8
+    if ds_size % 8 != 0:
+        ds_fout.write(b'\00' * (8 - ds_size % 8))
+    ds_fout.seek(0)
+    ds_fout.write(np.array([ds_size * 8], dtype=np.uint64).view(np.uint8).tobytes())
+    mt_fout.write(b'\xfa')
+    mt_size = mt_fout.tell() - 8
+    if mt_size % 8 != 0:
+        mt_fout.write(b'\00' * (8 - mt_size % 8))
+    mt_fout.seek(0)
+    mt_fout.write(np.array([mt_size * 8], dtype=np.uint64).view(np.uint8).tobytes())
 
     ds_fout.close()
     od_fout.close()
@@ -96,9 +112,9 @@ def prepare(args):
 
 def build_sa_bwt(args, mode):
 
-    ds_path = os.path.join(args.save_dir, mode)
-    sa_path = ds_path + '_sa'
-    bwt_path = ds_path + '_bwt'
+    ds_path = os.path.join(args.save_dir, f'text_{mode}.sdsl')
+    sa_path = os.path.join(args.save_dir, f'{mode}_sa')
+    bwt_path = os.path.join(args.save_dir, f'{mode}_bwt')
     if os.path.exists(sa_path) and os.path.exists(bwt_path):
         print(f'Step 2 (build_sa_bwt): Skipped. SA and BWT file already exists.', flush=True)
         return
@@ -113,7 +129,10 @@ def build_sa_bwt(args, mode):
     print(f'\tStep 2.1 (make-part): Starting ...', flush=True)
     start_time = time.time()
 
-    ds_size = os.path.getsize(ds_path)
+    DS_OFFSET = 8
+    with open(ds_path, 'rb') as f:
+        ds_size = int.from_bytes(f.read(8), 'little') // 8
+    ratio = int(np.ceil(np.log2(ds_size) / 8))
     mem_bytes = args.mem * 1024**3
     num_job_batches = 1
     while num_job_batches * (mem_bytes // 12) < ds_size:
@@ -128,20 +147,19 @@ def build_sa_bwt(args, mode):
     shutil.rmtree(parts_dir, ignore_errors=True)
     os.makedirs(parts_dir)
 
-    ranges, files = [], []
     for batch_start in range(0, total_jobs, parallel_jobs):
         batch_end = min(batch_start+parallel_jobs, total_jobs)
-        batch_ranges, batch_files = [], []
+        batch_ranges = []
         for i in range(batch_start, batch_end):
-            s, e = i*S, min((i+1)*S+HACK, ds_size)
+            s, e = DS_OFFSET + i*S, DS_OFFSET + min((i+1)*S+HACK, ds_size)
             batch_ranges.append((s, e))
-            batch_files.append(os.path.join(parts_dir, f'{s}-{e}'))
-        ranges += batch_ranges
-        files += batch_files
         pipes = []
         for (s, e) in batch_ranges:
-            pipes.append(os.popen(f'./rust_indexing make-part --data-file {ds_path} --parts-dir {parts_dir} --start-byte {s} --end-byte {e}'))
+            pipes.append(os.popen(f'./rust_indexing make-part --data-file {ds_path} --parts-dir {parts_dir} --start-byte {s} --end-byte {e} --ratio {ratio}'))
         [pipe.read() for pipe in pipes]
+        if any([pipe.close() is not None for pipe in pipes]):
+            print('\tStep 2.1 (make-part): Something went wrong', flush=True)
+            exit(1)
 
     end_time = time.time()
     print(f'\tStep 2.1 (make-part): Done. Took {end_time-start_time:.2f} seconds', flush=True)
@@ -158,7 +176,11 @@ def build_sa_bwt(args, mode):
     shutil.rmtree(bwt_dir, ignore_errors=True)
     os.makedirs(bwt_dir)
 
-    os.popen(f'./rust_indexing merge --merged-dir {merged_dir} --bwt-dir {bwt_dir} --suffix-path {" --suffix-path ".join(files)} --num-threads {args.cpus} --hacksize {HACK}').read()
+    pipe = os.popen(f'./rust_indexing merge --data-file {ds_path} --parts-dir {parts_dir} --merged-dir {merged_dir} --bwt-dir {bwt_dir} --num-threads {args.cpus} --hacksize {HACK} --ratio {ratio}')
+    pipe.read()
+    if pipe.close() is not None:
+        print('\tStep 2.2 (merge): Something went wrong', flush=True)
+        exit(1)
 
     shutil.rmtree(parts_dir)
 
@@ -175,19 +197,23 @@ def build_sa_bwt(args, mode):
     os.popen(f'cat {bwt_dir}/* > {bwt_path}').read()
     shutil.rmtree(bwt_dir)
 
-    end_time = time.time()
-    print(f'\tStep 2.3 (concat): Done. Took {end_time-start_time:.2f} seconds', flush=True)
-
-    # -------- Step 2.4 (verify) -------- #
-
     if not os.path.exists(sa_path):
         print('Failed to create SA', flush=True)
         exit(1)
-
     sa_size = os.path.getsize(sa_path)
-    if sa_size % ds_size != 0:
+    if sa_size != ds_size * ratio:
         print('SA file size is wrong', flush=True)
         exit(1)
+    if not os.path.exists(bwt_path):
+        print('Failed to create BWT', flush=True)
+        exit(1)
+    bwt_size = os.path.getsize(bwt_path)
+    if bwt_size != ds_size:
+        print('BWT file size is wrong', flush=True)
+        exit(1)
+
+    end_time = time.time()
+    print(f'\tStep 2.3 (concat): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
     end_time_all = time.time()
     print(f'Step 2 (build_sa_bwt): Done. Took {end_time_all-start_time_all:.2f} seconds', flush=True)
@@ -197,18 +223,20 @@ def format_file(args):
     start_time = time.time()
 
     for mode in ['data', 'meta']:
-        ds_path = os.path.join(args.save_dir, mode)
-        ds_path_new = os.path.join(args.save_dir, f'text_{mode}.sdsl')
-        ds_bytes = os.path.getsize(ds_path)
-        with open(ds_path_new, 'wb') as ds_fout:
-            ds_fout.write(np.array([ds_bytes * 8], dtype=np.uint64).view(np.uint8).tobytes())
-        os.popen(f'cat {ds_path} >> {ds_path_new}').read()
-        with open(ds_path_new, 'ab') as ds_fout:
-            if ds_bytes % 8 != 0:
-                ds_fout.write(b'\00' * (8 - ds_bytes % 8))
-        os.remove(ds_path)
+        ds_path = os.path.join(args.save_dir, f'text_{mode}.sdsl')
+        with open(ds_path, 'rb') as ds_f:
+            ds_bytes = int.from_bytes(ds_f.read(8), 'little') // 8
+        # ds_path_new = os.path.join(args.save_dir, f'text_{mode}.sdsl')
+        # ds_bytes = os.path.getsize(ds_path)
+        # with open(ds_path_new, 'wb') as ds_fout:
+        #     ds_fout.write(np.array([ds_bytes * 8], dtype=np.uint64).view(np.uint8).tobytes())
+        # os.popen(f'cat {ds_path} >> {ds_path_new}').read()
+        # with open(ds_path_new, 'ab') as ds_fout:
+        #     if ds_bytes % 8 != 0:
+        #         ds_fout.write(b'\00' * (8 - ds_bytes % 8))
+        # os.remove(ds_path)
 
-        sa_path = ds_path + '_sa'
+        sa_path = os.path.join(args.save_dir, f'{mode}_sa')
         sa_path_new = os.path.join(args.save_dir, f'sa_{mode}.sdsl')
         sa_bytes = os.path.getsize(sa_path)
         with open(sa_path_new, 'wb') as sa_fout:
@@ -220,7 +248,7 @@ def format_file(args):
                 sa_fout.write(b'\00' * (8 - sa_bytes % 8))
         os.remove(sa_path)
 
-        bwt_path = ds_path + '_bwt'
+        bwt_path = os.path.join(args.save_dir, f'{mode}_bwt')
         bwt_path_new = os.path.join(args.save_dir, f'bwt_{mode}.sdsl')
         bwt_bytes = os.path.getsize(bwt_path)
         with open(bwt_path_new, 'wb') as bwt_fout:
