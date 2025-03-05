@@ -5,7 +5,7 @@ import resource
 import subprocess
 import sys
 from tqdm import tqdm
-from indexing import prepare, build_sa_bwt, format_file
+from indexing import prepare, build_sa_bwt
 
 def main():
 
@@ -43,14 +43,16 @@ def main():
         assert args.batch_size > 0
         assert args.cpus > 0
 
+        assert os.path.exists(args.data_dir)
+        os.makedirs(args.save_dir, exist_ok=True)
+
         assert sys.byteorder == 'little'
         resource.setrlimit(resource.RLIMIT_NOFILE, (args.ulimit, args.ulimit))
 
         prepare(args)
         build_sa_bwt(args, mode='data')
         build_sa_bwt(args, mode='meta')
-        format_file(args)
-        print(os.popen(f'./cpp_indexing {args.save_dir}').read(), flush=True)
+        print(os.popen(f'./cpp_indexing {args.save_dir} 2>/dev/null').read(), flush=True)
 
 if __name__ == '__main__':
     main()
