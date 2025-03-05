@@ -115,8 +115,8 @@ def build_sa_bwt(args, mode):
     ds_path = os.path.join(args.save_dir, f'text_{mode}.sdsl')
     sa_path = os.path.join(args.save_dir, f'sa_{mode}.sdsl')
     bwt_path = os.path.join(args.save_dir, f'bwt_{mode}.sdsl')
-    if os.path.exists(sa_path) and os.path.exists(bwt_path):
-        print(f'Step 2 (build_sa_bwt): Skipped. SA and BWT file already exists.', flush=True)
+    if all(os.path.exists(path) for path in [sa_path, bwt_path]):
+        print(f'Step 2 (build_sa_bwt): Skipped. SDSL files already exists.', flush=True)
         return
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
@@ -176,18 +176,33 @@ def build_sa_bwt(args, mode):
     shutil.rmtree(bwt_dir, ignore_errors=True)
     os.makedirs(bwt_dir)
 
-    pipe = os.popen(f'./rust_indexing merge --data-file {ds_path} --parts-dir {parts_dir} --merged-dir {merged_dir} --merged-file {sa_path} --bwt-dir {bwt_dir} --bwt-file {bwt_path} --num-threads {args.cpus} --hacksize {HACK} --ratio {ratio}')
+    pipe = os.popen(f'./rust_indexing merge --data-file {ds_path} --parts-dir {parts_dir} --merged-dir {merged_dir} --bwt-dir {bwt_dir} --num-threads {args.cpus} --hacksize {HACK} --ratio {ratio}')
     pipe.read()
     if pipe.close() is not None:
         print('\tStep 2.2 (merge): Something went wrong', flush=True)
         exit(1)
 
     shutil.rmtree(parts_dir)
+
+    end_time = time.time()
+    print(f'\tStep 2.2 (merge): Done. Took {end_time-start_time:.2f} seconds', flush=True)
+
+    # -------- Step 2.3 (concat) -------- #
+
+    print(f'\tStep 2.3 (concat): Starting ...', flush=True)
+    start_time = time.time()
+
+    pipe = os.popen(f'./rust_indexing concat --data-file {ds_path} --merged-dir {merged_dir} --merged-file {sa_path} --bwt-dir {bwt_dir} --bwt-file {bwt_path} --num-threads {args.cpus} --ratio {ratio}')
+    pipe.read()
+    if pipe.close() is not None:
+        print('\tStep 2.3 (concat): Something went wrong', flush=True)
+        exit(1)
+
     shutil.rmtree(merged_dir)
     shutil.rmtree(bwt_dir)
 
     end_time = time.time()
-    print(f'\tStep 2.2 (merge): Done. Took {end_time-start_time:.2f} seconds', flush=True)
+    print(f'\tStep 2.3 (concat): Done. Took {end_time-start_time:.2f} seconds', flush=True)
 
     end_time_all = time.time()
     print(f'Step 2 (build_sa_bwt): Done. Took {end_time_all-start_time_all:.2f} seconds', flush=True)
