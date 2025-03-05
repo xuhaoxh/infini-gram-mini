@@ -238,7 +238,7 @@ def main():
     prepare(args)
     build_sa_bwt(args, mode='data')
     build_sa_bwt(args, mode='meta')
-    print(os.popen(f'./cpp_indexing {args.save_dir}').read(), flush=True)
+    print(os.popen(f'./cpp_indexing {args.save_dir} 2>/dev/null').read(), flush=True)
 
 if __name__ == '__main__':
     main()

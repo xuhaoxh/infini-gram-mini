@@ -170,7 +170,18 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
             {
                 auto start_time = std::chrono::high_resolution_clock::now();
                 auto event = memory_monitor::event("sample ISA");
-                _isa_sampling<t_index, 0> isa_sample(config, &sa_sample);
+                _isa_sampling<t_index, 0> tmp_isa_sample(config, &sa_sample); // this one has 64 bits per element
+
+                // adjust to the appropriate ptr size
+                int_vector_buffer<>  sa_buf(cache_file_name(conf::KEY_SA, config));
+                auto n = sa_buf.size();
+                _isa_sampling<t_index, 0> isa_sample;
+                isa_sample.width(bits::hi(n)+1);
+                isa_sample.resize((n-1)/t_index::isa_sample_dens+1);
+                for (size_t i=0; i < isa_sample.size(); ++i) {
+                    static_cast<int_vector<0>&>(isa_sample)[i] = static_cast<int_vector<0>&>(tmp_isa_sample)[i];
+                }
+
                 store_to_cache(isa_sample, conf::KEY_SAMPLED_ISA, config);
                 register_cache_file(conf::KEY_SAMPLED_ISA, config);
                 auto end_time = std::chrono::high_resolution_clock::now();
