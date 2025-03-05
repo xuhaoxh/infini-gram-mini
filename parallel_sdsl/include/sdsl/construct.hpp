@@ -27,10 +27,17 @@
 #include "construct_lcp.hpp"
 #include "construct_bwt.hpp"
 #include "construct_sa.hpp"
+#include "csa_sampling_strategy.hpp"
 #include <string>
 
 namespace sdsl
 {
+
+// forward declarations
+template<class t_csa, uint8_t t_width>
+class _sa_order_sampling;
+template<class t_csa, uint8_t t_width>
+class _isa_sampling;
 
 template<class int_vector>
 bool contains_no_zero_symbol(const int_vector& text, const std::string& file)
@@ -115,11 +122,10 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
 {
     auto event = memory_monitor::event("construct CSA");
     const char* KEY_TEXT = key_text_trait<t_index::alphabet_category::WIDTH>::KEY_TEXT;
-    const char* KEY_BWT  = key_bwt_trait<t_index::alphabet_category::WIDTH>::KEY_BWT;
     typedef int_vector<t_index::alphabet_category::WIDTH> text_type;
     {
         auto event = memory_monitor::event("parse input text");
-        // (1) check, if the text is cached
+        // (1) prepare text
         if (!cache_file_exists(KEY_TEXT, config)) {
             text_type text;
             load_vector_from_file(text, file, num_bytes);
@@ -131,7 +137,7 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
         register_cache_file(KEY_TEXT, config);
     }
     {
-        // (2) check, if the suffix array is cached
+        // (2) construct SA
         auto event = memory_monitor::event("SA");
         if (!cache_file_exists(conf::KEY_SA, config)) {
             construct_sa<t_index::alphabet_category::WIDTH>(config);
@@ -139,15 +145,42 @@ void construct(t_index& idx, const std::string& file, cache_config& config, uint
         register_cache_file(conf::KEY_SA, config);
     }
     {
-        //  (3) construct BWT
+        // (3) construct BWT
         auto event = memory_monitor::event("BWT");
-        if (!cache_file_exists(KEY_BWT, config)) {
+        if (!cache_file_exists(conf::KEY_BWT, config)) {
             construct_bwt<t_index::alphabet_category::WIDTH>(config);
         }
-        register_cache_file(KEY_BWT, config);
+        register_cache_file(conf::KEY_BWT, config);
     }
     {
-        //  (4) use BWT to construct the CSA
+        // (6, 7) sample SA and ISA
+        if (!(cache_file_exists(conf::KEY_SAMPLED_SA, config) && cache_file_exists(conf::KEY_SAMPLED_ISA, config))) {
+            _sa_order_sampling<t_index, 0> sa_sample;
+            {
+                auto start_time = std::chrono::high_resolution_clock::now();
+                auto event = memory_monitor::event("sample SA");
+                _sa_order_sampling<t_index, 0> tmp_sa_sample(config);
+                sa_sample.swap(tmp_sa_sample);
+                store_to_cache(sa_sample, conf::KEY_SAMPLED_SA, config);
+                register_cache_file(conf::KEY_SAMPLED_SA, config);
+                auto end_time = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+                std::cout << "Step 6 (sampling SA): Done. Took " << duration.count() << " seconds" << std::endl;
+            }
+            {
+                auto start_time = std::chrono::high_resolution_clock::now();
+                auto event = memory_monitor::event("sample ISA");
+                _isa_sampling<t_index, 0> isa_sample(config, &sa_sample);
+                store_to_cache(isa_sample, conf::KEY_SAMPLED_ISA, config);
+                register_cache_file(conf::KEY_SAMPLED_ISA, config);
+                auto end_time = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+                std::cout << "Step 7 (sample ISA): Done. Took " << duration.count() << " seconds" << std::endl;
+            }
+        }
+    }
+    {
+        // put things together into .fm9
         auto event = memory_monitor::event("construct CSA");
         t_index tmp(config);
         idx.swap(tmp);

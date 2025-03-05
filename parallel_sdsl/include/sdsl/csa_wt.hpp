@@ -318,35 +318,27 @@ csa_wt<t_wt, t_dens, t_inv_dens, t_sa_sample_strat, t_isa, t_alphabet_strat>::cs
     {
         auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("construct wavelet tree");
-
         int_vector<alphabet_type::int_width> bwt;
         load_from_cache(bwt, key_trait<alphabet_type::int_width>::KEY_BWT, config);
         // std::cout << "bwt size = " << bwt.size() << ", width = " << (int)(bwt.width()) << std::endl;
         size_type n = bwt.size();
         wavelet_tree_type tmp_wt(bwt, n);
-
         m_wavelet_tree.swap(tmp_wt);
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
         std::cout << "Step 5 (wavetree): Done. Took " << duration.count() << " seconds" << std::endl;
     }
     {
-        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("sample SA");
-        sa_sample_type tmp_sa_sample(config);
+        sa_sample_type tmp_sa_sample;
+        load_from_cache(tmp_sa_sample, conf::KEY_SAMPLED_SA, config);
         m_sa_sample.swap(tmp_sa_sample);
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-        std::cout << "Step 6 (sampling SA): Done. Took " << duration.count() << " seconds" << std::endl;
     }
     {
-        auto start_time = std::chrono::high_resolution_clock::now();
         auto event = memory_monitor::event("sample ISA");
-        isa_sample_type isa_s(config, &m_sa_sample);
-        util::swap_support(m_isa_sample, isa_s, &m_sa_sample, &m_sa_sample);
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-        std::cout << "Step 7 (sample ISA): Done. Took " << duration.count() << " seconds" << std::endl;
+        isa_sample_type tmp_isa_sample;
+        load_from_cache(tmp_isa_sample, conf::KEY_SAMPLED_ISA, config);
+        util::swap_support(m_isa_sample, tmp_isa_sample, &m_sa_sample, &m_sa_sample);
     }
 }
 
