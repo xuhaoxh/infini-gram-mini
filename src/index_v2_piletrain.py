@@ -9,24 +9,18 @@ from indexing import prepare, build_sa_bwt
 
 def main():
 
-    for s in range(25):
-        save_dir = f'/weka/oe-training-default/jiachengl/hf-fm/index/v2_dclm_all/{s:02d}'
+    for s in range(2):
+        save_dir = f'/weka/oe-training-default/jiachengl/hf-fm/index/v2_piletrain/{s:01d}'
         if os.path.exists(save_dir):
-            print(f'Index shard {s:02d} already exists. Skipping.', flush=True)
+            print(f'Index shard {s:01d} already exists. Skipping.', flush=True)
             continue
-        print(f'Index shard {s:02d} does not exist. Creating ...', flush=True)
+        print(f'Index shard {s:01d} does not exist. Creating ...', flush=True)
 
-        data_dir = os.path.join(os.getcwd(), f'dclm_s{s:02d}') # this is an ephemeral directory
+        data_dir = os.path.join(os.getcwd(), f'piletrain_s{s:01d}') # this is an ephemeral directory
         os.makedirs(data_dir, exist_ok=True)
-        for shard_ix in tqdm(list(range(s * 4, (s + 1) * 4))):
-            global_shard_ix = shard_ix // 10 + 1
-            local_shard_ix = shard_ix % 10
-            print(f'Downloading data from s3: global_shard_ix={global_shard_ix}, local_shard_ix={local_shard_ix}', flush=True)
-            dir = f'{data_dir}/global-shard_{global_shard_ix:02d}_of_10/local-shard_{local_shard_ix:02d}_of_10'
-            os.makedirs(dir, exist_ok=True)
-            process = subprocess.Popen(f'aws s3 cp --recursive s3://ai2-llm/pretraining-data/sources/dclm/baseline/documents/global-shard_{global_shard_ix:02d}_of_10/local-shard_{local_shard_ix:01d}_of_10 {dir}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        for shard_ix in range(s * 15, (s+1) * 15):
+            process = subprocess.Popen(f'cp /weka/oe-training-default/jiachengl/hf-fm/data/piletrain/{shard_ix:02d}.jsonl {data_dir}', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
             process.wait()
-            print(f'Downloaded. Total size: {os.popen(f"du -sh {dir}").read()}', flush=True)
 
         parser = argparse.ArgumentParser()
         parser.add_argument('--doc_sep', type=bytes, default=b'\xff')

@@ -34,15 +34,15 @@ def load_file(path):
         raise ValueError(f'Unknown file type: {path}')
     return lines
 
-def parse_line(line, doc_sep, path, linenum):
+def parse_line(line, doc_sep, rel_path, linenum):
     meta = json.loads(line.strip('\n'))
     data = meta['text']
     del meta['text']
     data = doc_sep + data.encode('utf-8')
-    meta = (json.dumps({'path': path, 'linenum': linenum, 'metadata': meta}) + '\n').encode('utf-8')
+    meta = (json.dumps({'path': rel_path, 'linenum': linenum, 'metadata': meta}) + '\n').encode('utf-8')
     return data, meta
 
-def prepare(args):
+def prepare_fewfiles(args):
 
     ds_path = os.path.join(args.save_dir, f'text_data.sdsl')
     od_path = os.path.join(args.save_dir, f'data_offset')
@@ -109,6 +109,115 @@ def prepare(args):
 
     end_time = time.time()
     print(f'Step 1 (prepare): Done. Took {end_time-start_time:.2f} seconds', flush=True)
+
+def prepare_manyfiles_map(filenum, path, temp_dir, doc_sep, rel_path):
+    lines = load_file(path)
+
+    ds_fout = open(f'{temp_dir}/files/text_data.{filenum:04d}', 'wb')
+    od_fout = open(f'{temp_dir}/files/data_offset.{filenum:04d}', 'wb')
+    mt_fout = open(f'{temp_dir}/files/text_meta.{filenum:04d}', 'wb')
+    om_fout = open(f'{temp_dir}/files/meta_offset.{filenum:04d}', 'wb')
+    od = 0
+    om = 0
+
+    for linenum, line in enumerate(lines):
+        data, meta = parse_line(line, doc_sep, rel_path, linenum)
+        ds_fout.write(data)
+        od_fout.write(np.array([od], dtype=np.uint64).view(np.uint8).tobytes())
+        od += len(data)
+        mt_fout.write(meta)
+        om_fout.write(np.array([om], dtype=np.uint64).view(np.uint8).tobytes())
+        om += len(meta)
+
+    ds_fout.close()
+    od_fout.close()
+    mt_fout.close()
+    om_fout.close()
+
+def prepare_manyfiles_reduce(filenum, data_prev_bytes, meta_prev_bytes, offset_prev_bytes, temp_dir, save_dir):
+    for mode in ['data', 'meta']:
+        text_fout = open(f'{save_dir}/text_{mode}.sdsl', 'rb+') # do not truncate
+        offset_fout = open(f'{save_dir}/{mode}_offset', 'rb+')
+        prev_bytes = data_prev_bytes if mode == 'data' else meta_prev_bytes
+        text_fout.seek(8 + prev_bytes)
+        offset_fout.seek(offset_prev_bytes)
+
+        with open(f'{temp_dir}/files/text_{mode}.{filenum:04d}', 'rb') as f:
+            text_fout.write(f.read())
+        with open(f'{temp_dir}/files/{mode}_offset.{filenum:04d}', 'rb') as f:
+            offsets = np.frombuffer(f.read(), dtype=np.uint8).view(np.uint64).copy()
+            offsets += prev_bytes
+            offset_fout.write(offsets.view(np.uint8).tobytes())
+
+        text_fout.close()
+        offset_fout.close()
+
+def prepare_manyfiles(args):
+
+    ds_path = os.path.join(args.save_dir, f'text_data.sdsl')
+    od_path = os.path.join(args.save_dir, f'data_offset')
+    mt_path = os.path.join(args.save_dir, f'text_meta.sdsl')
+    om_path = os.path.join(args.save_dir, f'meta_offset')
+    if all([os.path.exists(path) for path in [ds_path, od_path, mt_path, om_path]]):
+        print('Step 1 (prepare): Skipped. All files already exist.', flush=True)
+        return
+
+    print('Step 1 (prepare): Starting ...', flush=True)
+    start_time = time.time()
+
+    data_paths = glob.glob(f'{args.data_dir}/**/*.json*', recursive=True)
+    data_paths = list(sorted(data_paths))
+
+    with mp.get_context('fork').Pool(args.cpus) as p:
+        shutil.rmtree(f'{args.temp_dir}/files', ignore_errors=True)
+        os.makedirs(f'{args.temp_dir}/files')
+        _ = p.starmap(prepare_manyfiles_map, [(filenum, data_path, args.temp_dir, args.doc_sep, data_path[len(args.data_dir)+1:]) for (filenum, data_path) in enumerate(data_paths)])
+
+        tasks = []
+        data_prev_bytes = 0
+        meta_prev_bytes = 0
+        offset_prev_bytes = 0
+        for filenum in range(len(data_paths)):
+            tasks.append((filenum, data_prev_bytes, meta_prev_bytes, offset_prev_bytes, args.temp_dir, args.save_dir))
+            data_prev_bytes += os.path.getsize(f'{args.temp_dir}/files/text_data.{filenum:04d}')
+            meta_prev_bytes += os.path.getsize(f'{args.temp_dir}/files/text_meta.{filenum:04d}')
+            offset_prev_bytes += os.path.getsize(f'{args.temp_dir}/files/data_offset.{filenum:04d}')
+
+        with open(ds_path, 'wb') as f:
+            data_file_size = 8 + data_prev_bytes + (8 - data_prev_bytes % 8) # \xfa + padding
+            f.truncate(data_file_size)
+            f.seek(0)
+            f.write(np.array([(data_prev_bytes + 1) * 8], dtype=np.uint64).view(np.uint8).tobytes())
+            f.seek(8 + data_prev_bytes)
+            f.write(b'\xfa')
+            f.write(b'\00' * (8 - data_prev_bytes % 8 - 1))
+        with open(od_path, 'wb') as f:
+            data_offset_file_size = offset_prev_bytes
+            f.truncate(data_offset_file_size)
+        with open(mt_path, 'wb') as f:
+            meta_file_size = 8 + meta_prev_bytes + (8 - meta_prev_bytes % 8) # \xfa + padding
+            f.truncate(meta_file_size)
+            f.seek(0)
+            f.write(np.array([(meta_prev_bytes + 1) * 8], dtype=np.uint64).view(np.uint8).tobytes())
+            f.seek(8 + meta_prev_bytes)
+            f.write(b'\xfa')
+            f.write(b'\00' * (8 - meta_prev_bytes % 8 - 1))
+        with open(om_path, 'wb') as f:
+            meta_offset_file_size = offset_prev_bytes
+            f.truncate(meta_offset_file_size)
+
+        _ = p.starmap(prepare_manyfiles_reduce, tasks)
+        shutil.rmtree(f'{args.temp_dir}/files')
+
+    end_time = time.time()
+    print(f'Step 1 (prepare): Done. Took {end_time-start_time:.2f} seconds', flush=True)
+
+def prepare(args):
+    data_paths = glob.glob(f'{args.data_dir}/**/*.json*', recursive=True)
+    if len(data_paths) <= 50:
+        prepare_fewfiles(args)
+    else:
+        prepare_manyfiles(args)
 
 def build_sa_bwt(args, mode):
 
