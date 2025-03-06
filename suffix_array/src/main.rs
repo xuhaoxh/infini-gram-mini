@@ -203,7 +203,6 @@ pub fn to_bytes(input: &[u64], size_width: usize) -> Vec<u8> {
 
 /* Convert a uint8 array to a uint64. Only called on (relatively) small files. */
 pub fn from_bytes(input: Vec<u8>, size_width: usize) -> Vec<u64> {
-    println!("S {}", input.len());
     assert!(input.len() % size_width == 0);
     let mut bytes:Vec<u64> = Vec::with_capacity(input.len()/size_width);
 
@@ -979,16 +978,16 @@ impl<'a> PartialOrd for MergeState<'a> {
         fn get_next_maybe_skip(mut tablestream:&mut TableStream,
                                index:&mut u64, thresh:usize) -> u64 {
             let mut location = get_next_pointer_from_table_canfail(&mut tablestream);
+            *index += 1;
             if location == u64::MAX {
                 return location;
             }
-            *index += 1;
             while location >= thresh as u64 {
                 location = get_next_pointer_from_table_canfail(&mut tablestream);
+                *index += 1;
                 if location == u64::MAX {
                     return location;
                 }
-                *index += 1;
             }
             return location;
         }
@@ -999,6 +998,7 @@ impl<'a> PartialOrd for MergeState<'a> {
             let position = get_next_maybe_skip(&mut tables[x],
                                                &mut idxs[x], texts_len[x]);
             if idxs[x] <= ends[x] as u64 {
+                    assert!(position != u64::MAX);
                     heap.push(MergeState {
                         suffix: &texts[x][position as usize..],
                         position: position,
@@ -1025,23 +1025,21 @@ impl<'a> PartialOrd for MergeState<'a> {
 
             let position = get_next_maybe_skip(&mut tables[table_index],
                                                &mut idxs[table_index], texts_len[table_index],);
-            if position == u64::MAX {
-                continue;
-            }
 
             if idxs[table_index] <= ends[table_index] as u64 {
+                assert!(position != u64::MAX);
                 let next = &texts[table_index][position as usize..];
 
                 let match_len = (0..(hacksize+1)).find(|&j| !(j < next.len() && j < prev.len() && next[j] == prev[j]));
                 if !did_warn_long_sequences {
                     if let Some(match_len_) = match_len {
                         if match_len_ >= hacksize {
-                            println!("There is a match longer than 50,000,000 bytes.");
+                            println!("There is a match longer than {} bytes.", hacksize);
                             println!("You probably don't want to be using this code on this dataset---it's (possibly) quadratic runtime now.");
                             did_warn_long_sequences = true;
                         }
                     } else {
-                        println!("There is a match longer than 50,000,000 bytes.");
+                        println!("There is a match longer than {} bytes.", hacksize);
                         println!("You probably don't want to be using this code on this dataset---it's quadratic runtime now.");
                         did_warn_long_sequences = true;
                     }
@@ -1061,7 +1059,6 @@ impl<'a> PartialOrd for MergeState<'a> {
     // Make sure we have enough space to take strided offsets for multiple threads
     // This should be an over-approximation, and starts allowing new threads at 1k of data
     let num_threads = std::cmp::min(num_threads, std::cmp::max((texts[0].len() as i64 - 1024)/10, 1));
-    println!("AA {}", num_threads);
 
     // Start a bunch of jobs that each work on non-overlapping regions of the final resulting suffix array
     // Each job is going to look at all of the partial suffix arrays to take the relavent slice.
@@ -1089,7 +1086,7 @@ impl<'a> PartialOrd for MergeState<'a> {
                 }
             }
 
-            println!("Spawn {}: {:?} {:?}", i, starts, ends);
+            // println!("Spawn {}: {:?} {:?}", i, starts, ends);
 
             let starts2 = starts.clone();
             let ends2 = ends.clone();
