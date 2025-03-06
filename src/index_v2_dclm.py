@@ -15,9 +15,10 @@ def main():
             print(f'Index shard {s:02d} already exists. Skipping.', flush=True)
             continue
         print(f'Index shard {s:02d} does not exist. Creating ...', flush=True)
-
+        os.makedirs(save_dir, exist_ok=True)
         data_dir = os.path.join(os.getcwd(), f'dclm_s{s:02d}') # this is an ephemeral directory
         os.makedirs(data_dir, exist_ok=True)
+
         for shard_ix in tqdm(list(range(s * 4, (s + 1) * 4))):
             global_shard_ix = shard_ix // 10 + 1
             local_shard_ix = shard_ix % 10
@@ -41,9 +42,6 @@ def main():
 
         assert args.batch_size > 0
         assert args.cpus > 0
-
-        assert os.path.exists(args.data_dir)
-        os.makedirs(args.save_dir, exist_ok=True)
 
         assert sys.byteorder == 'little'
         resource.setrlimit(resource.RLIMIT_NOFILE, (args.ulimit, args.ulimit))
