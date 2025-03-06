@@ -1089,12 +1089,6 @@ impl<'a> PartialOrd for MergeState<'a> {
                 }
             }
 
-            for j in 0..ends.len() {
-                let l = &texts[j][table_load_disk(&mut tables[j], starts[j], ratio as usize)..];
-                let l = &l[..std::cmp::min(l.len(), 20)];
-                println!("Text{} {:?}", j, l);
-            }
-
             println!("Spawn {}: {:?} {:?}", i, starts, ends);
 
             let starts2 = starts.clone();

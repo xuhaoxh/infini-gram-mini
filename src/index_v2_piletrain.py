@@ -11,7 +11,7 @@ def main():
 
     for s in range(2):
         save_dir = f'/weka/oe-training-default/jiachengl/hf-fm/index/v2_piletrain/{s:01d}'
-        if os.path.exists(save_dir):
+        if os.path.exists(save_dir) and os.path.exists(f'{save_dir}/data.fm9') and os.path.exists(f'{save_dir}/meta.fm9'):
             print(f'Index shard {s:01d} already exists. Skipping.', flush=True)
             continue
         print(f'Index shard {s:01d} does not exist. Creating ...', flush=True)
