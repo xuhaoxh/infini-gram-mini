@@ -9,7 +9,7 @@ from indexing import prepare, build_sa_bwt
 
 def main():
 
-    for s in range(20):
+    for s in range(15):
         save_dir = f'/weka/oe-training-default/jiachengl/hf-fm/index/v2_cc/2025-05/{s:02d}'
         if os.path.exists(save_dir):
             print(f'Index shard {s:02d} already exists. Skipping.', flush=True)
@@ -25,8 +25,9 @@ def main():
         lines = [line for line in lines if 'PRE ' in line]
         subdirs = [line.split('PRE ')[-1].rstrip('/') for line in lines]
         subdirs = sorted(subdirs, key=lambda x: int(x.split('.')[-1]))
+        assert len(subdirs) == 100
 
-        for shard_ix in tqdm(list(range(s * 5, (s + 1) * 5))):
+        for shard_ix in tqdm(list(range(s * 7, min((s + 1) * 7, 100)))):
             subdir = subdirs[shard_ix]
             print(f'Downloading data from s3: subdir={subdir}', flush=True)
             dir = f'{data_dir}/{subdir}'
