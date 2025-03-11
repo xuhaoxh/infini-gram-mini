@@ -6,7 +6,7 @@
 #include <random>
 
 int main() {
-    auto engine = Engine({"../index/pileval_bwt"}, false, true);
+    auto engine = Engine({"../index/v2_pileval"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/pile-val"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/dclm-0000"}, false, true);
     // auto engine = Engine({"/mmfs1/gscratch/h2lab/xuhao/fm-engine/indexes/test"}, false, true);
@@ -29,16 +29,16 @@ int main() {
         cout << "doc_len: " << doc.doc_len << endl;
         cout << "disp_len: " << doc.disp_len << endl;
         cout << "needle_offset: " << doc.needle_offset << endl;
-        cout << "meta: " << doc.meta << endl;
-        cout << "data: " << doc.data << endl;
+        cout << "metadata: " << doc.metadata << endl;
+        cout << "text: " << doc.text << endl;
 
-        doc = engine.get_doc_by_rank(0, end, query.length(), 20);
+        doc = engine.get_doc_by_rank(0, end-1, query.length(), 20);
         cout << "doc_ix: " << doc.doc_ix << endl;
         cout << "doc_len: " << doc.doc_len << endl;
         cout << "disp_len: " << doc.disp_len << endl;
         cout << "needle_offset: " << doc.needle_offset << endl;
-        cout << "meta: " << doc.meta << endl;
-        cout << "data: " << doc.data << endl;
+        cout << "metadata: " << doc.metadata << endl;
+        cout << "text: " << doc.text << endl;
     }
     // {
     //     string query = "natural language processing";

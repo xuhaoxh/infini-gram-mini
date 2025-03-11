@@ -49,8 +49,10 @@
 use std::path::Path;
 use std::time::Instant;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::BufReader;
+use std::io::SeekFrom;
 use std::fs::File;
 use std::io::prelude::*;
 use std::cmp::Reverse;
@@ -60,10 +62,12 @@ extern crate filebuffer;
 extern crate zstd;
 extern crate crossbeam;
 extern crate clap;
+extern crate glob;
 
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use clap::{Parser, Subcommand};
+use glob::glob;
 
 mod table;
 
@@ -92,6 +96,8 @@ enum Commands {
         start_byte: usize,
         #[clap(short, long)]
         end_byte: usize,
+        #[clap(short, long)]
+        ratio: usize,
     },
 
     CountOccurrences {
@@ -138,7 +144,9 @@ enum Commands {
 
     Merge {
         #[clap(short, long)]
-        suffix_path: Vec<String>,
+        data_file: String,
+        #[clap(short, long)]
+        parts_dir: String,
         #[clap(short, long)]
         merged_dir: String,
         #[clap(short, long)]
@@ -147,6 +155,25 @@ enum Commands {
         num_threads: i64,
         #[clap(long, default_value_t = 100000)]
         hacksize: usize,
+        #[clap(short, long)]
+        ratio: usize,
+    },
+
+    Concat {
+        #[clap(short, long)]
+        data_file: String,
+        #[clap(short, long)]
+        merged_dir: String,
+        #[clap(short, long)]
+        merged_file: String,
+        #[clap(short, long)]
+        bwt_dir: String,
+        #[clap(short, long)]
+        bwt_file: String,
+        #[clap(short, long, default_value_t = 8)]
+        num_threads: i64,
+        #[clap(short, long)]
+        ratio: usize,
     },
 
     Collect {
@@ -176,7 +203,6 @@ pub fn to_bytes(input: &[u64], size_width: usize) -> Vec<u8> {
 
 /* Convert a uint8 array to a uint64. Only called on (relatively) small files. */
 pub fn from_bytes(input: Vec<u8>, size_width: usize) -> Vec<u64> {
-    println!("S {}", input.len());
     assert!(input.len() % size_width == 0);
     let mut bytes:Vec<u64> = Vec::with_capacity(input.len()/size_width);
 
@@ -394,7 +420,7 @@ fn cmd_make(fpath: &String)   -> std::io::Result<()> {
  * being saved but the constant is rather high. This method does exactly
  * the same thing as save except on a range of bytes.
  */
- fn cmd_make_part(fpath: &String, parts_dir: &String, start: u64, end: u64)   -> std::io::Result<()> {
+ fn cmd_make_part(fpath: &String, parts_dir: &String, start: u64, end: u64, ratio: usize)   -> std::io::Result<()> {
     let now = Instant::now();
     println!("Opening up the dataset files");
 
@@ -416,15 +442,10 @@ fn cmd_make(fpath: &String)   -> std::io::Result<()> {
     let parts = st.into_parts();
     let table = parts.1;
 
-    let ratio = ((text.len() as f64).log2()/8.0).ceil() as usize;
-    println!("Ratio: {}", ratio);
-
-    let mut buffer = File::create(format!("{}/{}-{}.table.bin", parts_dir, start, end))?;
-    let mut buffer2 = File::create(format!("{}/{}-{}", parts_dir, start, end))?;
+    let mut buffer = File::create(format!("{}/{}-{}", parts_dir, start, end))?;
     let bufout = to_bytes(&table, ratio);
     println!("Writing the suffix array at time t={}ms", now.elapsed().as_millis());
     buffer.write_all(&bufout)?;
-    buffer2.write_all(text)?;
     println!("And finished at time t={}ms", now.elapsed().as_millis());
     Ok(())
 }
@@ -900,43 +921,48 @@ impl<'a> PartialOrd for MergeState<'a> {
  * will work out correctly. (I did call it hacksize after all.....)
  * In practice this works. It may not for your use case if there are long duplicates.
  */
- fn cmd_merge(data_files: &Vec<String>, merged_dir: &String, bwt_dir: &String, num_threads: i64, hacksize: usize)  -> std::io::Result<()> {
-    // This value is declared here, but also in scripts/make_suffix_array.py
-    // If you want to change it, it needs to be changed in both places.
+ fn cmd_merge(fpath: &String, parts_dir: &String, merged_dir: &String, bwt_dir: &String, num_threads: i64, hacksize: usize, ratio: usize)  -> std::io::Result<()> {
 
-    let nn:usize = data_files.len();
+    let mut part_files:Vec<String> = glob(&format!("{}/*", parts_dir)).unwrap().map(|x| x.unwrap()).map(|x| x.to_str().unwrap().to_string()).collect();
+    part_files.sort_by(|a, b| {
+        let parts_a:Vec<&str> = a.split("/").last().unwrap().split("-").collect();
+        let parts_b:Vec<&str> = b.split("/").last().unwrap().split("-").collect();
+        assert!(parts_a.len() == 2);
+        assert!(parts_b.len() == 2);
+        let start_a = parts_a[0].parse::<u64>().unwrap();
+        let start_b = parts_b[0].parse::<u64>().unwrap();
+        start_a.cmp(&start_b)
+    });
+    let part_ranges:Vec<(u64, u64)> = part_files.iter().map(|x| {
+        let parts:Vec<&str> = x.split("/").last().unwrap().split("-").collect();
+        assert!(parts.len() == 2);
+        let start = parts[0].parse::<u64>().unwrap();
+        let end = parts[1].parse::<u64>().unwrap();
+        (start, end)
+    }).collect();
 
-    fn load_text2<'s,'t>(fpath:String) -> Vec<u8> {
-        println!("Setup buffer");
-        let mut text_ = Vec::with_capacity(std::fs::metadata(fpath.clone()).unwrap().len() as usize);
-        println!("Done buffer {}", text_.len());
-        fs::File::open(fpath.clone()).unwrap().read_to_end(&mut text_).unwrap();
-        println!("Done read buffer");
+    let nn:usize = part_files.len();
+
+    fn load_text2<'s,'t>(fpath: String, start: u64, end: u64) -> Vec<u8> {
+        let space_available = std::fs::metadata(fpath.clone()).unwrap().len() as u64;
+        assert!(start < end);
+        assert!(end <= space_available);
+        let mut text_ = vec![0u8; (end-start) as usize];
+        let mut file = fs::File::open(fpath.clone()).unwrap();
+        file.seek(std::io::SeekFrom::Start(start)).expect ("Seek failed!");
+        file.read_exact(&mut text_).unwrap();
         return text_;
     }
 
-    // Start out by loading the data files and suffix arrays.
-    let texts:Vec<Vec<u8>> = (0..nn).map(|x| load_text2(data_files[x].clone())).collect();
-
+    let texts:Vec<Vec<u8>> = (0..nn).map(|x| load_text2(fpath.clone(), part_ranges[x].0, part_ranges[x].1)).collect();
     let texts_len:Vec<usize> = texts.iter().enumerate().map(|(i,x)| x.len() - (if i+1 == texts.len() {0} else {hacksize})).collect();
 
-    let metadatas:Vec<u64> = (0..nn).map(|x| {
-        let meta = fs::metadata(format!("{}.table.bin", data_files[x].clone())).unwrap();
-        assert!(meta.len()%(texts[x].len() as u64) == 0);
-        return meta.len();
-    }).collect();
-
-    let big_ratio = ((texts_len.iter().sum::<usize>() as f64).log2()/8.0).ceil() as usize;
-    println!("Ratio: {}", big_ratio);
-
-    let ratio = metadatas[0] / (texts[0].len() as u64);
-
     fn worker(texts:&Vec<Vec<u8>>, starts:Vec<usize>, ends:Vec<usize>, texts_len:Vec<usize>, part:usize,
-            merged_dir: String, bwt_dir: String, data_files: Vec<String>, ratio: usize, big_ratio: usize, hacksize: usize) {
+            merged_dir: String, bwt_dir: String, part_files: Vec<String>, ratio: usize, hacksize: usize) {
 
         let nn = texts.len();
         let mut tables:Vec<TableStream> = (0..nn).map(|x| {
-            make_table(format!("{}.table.bin", data_files[x]), starts[x], ratio)
+            make_table(part_files[x].clone(), starts[x], ratio)
         }).collect();
 
         let mut idxs:Vec<u64> = starts.iter().map(|&x| x as u64).collect();
@@ -951,18 +977,17 @@ impl<'a> PartialOrd for MergeState<'a> {
 
         fn get_next_maybe_skip(mut tablestream:&mut TableStream,
                                index:&mut u64, thresh:usize) -> u64 {
-            //println!("{}", *index);
             let mut location = get_next_pointer_from_table_canfail(&mut tablestream);
+            *index += 1;
             if location == u64::MAX {
                 return location;
             }
-            *index += 1;
             while location >= thresh as u64 {
                 location = get_next_pointer_from_table_canfail(&mut tablestream);
+                *index += 1;
                 if location == u64::MAX {
                     return location;
                 }
-                *index += 1;
             }
             return location;
         }
@@ -972,8 +997,8 @@ impl<'a> PartialOrd for MergeState<'a> {
         for x in 0..nn {
             let position = get_next_maybe_skip(&mut tables[x],
                                                &mut idxs[x], texts_len[x]);
-            //println!("{} @ {}", position, x);
             if idxs[x] <= ends[x] as u64 {
+                    assert!(position != u64::MAX);
                     heap.push(MergeState {
                         suffix: &texts[x][position as usize..],
                         position: position,
@@ -989,8 +1014,7 @@ impl<'a> PartialOrd for MergeState<'a> {
 
         let mut prev = &texts[0][0..];
         while let Some(MergeState {suffix: _suffix, position, table_index, hacksize}) = heap.pop() {
-            //next_table.write_all(&(position + delta[table_index] as u64).to_le_bytes()).expect("Write OK");
-            next_table.write_all(&(position + delta[table_index] as u64).to_le_bytes()[..big_ratio]).expect("Write OK");
+            next_table.write_all(&(position + delta[table_index] as u64).to_le_bytes()[..ratio]).expect("Write OK");
             if position > 0 {
                 bwt.write_all(&texts[table_index][position as usize-1..position as usize]).expect("Write OK");
             } else if table_index > 0 {
@@ -1001,24 +1025,21 @@ impl<'a> PartialOrd for MergeState<'a> {
 
             let position = get_next_maybe_skip(&mut tables[table_index],
                                                &mut idxs[table_index], texts_len[table_index],);
-            if position == u64::MAX {
-                continue;
-            }
 
             if idxs[table_index] <= ends[table_index] as u64 {
+                assert!(position != u64::MAX);
                 let next = &texts[table_index][position as usize..];
-                //println!("  {:?}", &next[..std::cmp::min(10, next.len())]);
 
                 let match_len = (0..(hacksize+1)).find(|&j| !(j < next.len() && j < prev.len() && next[j] == prev[j]));
                 if !did_warn_long_sequences {
                     if let Some(match_len_) = match_len {
                         if match_len_ >= hacksize {
-                            println!("There is a match longer than 50,000,000 bytes.");
+                            println!("There is a match longer than {} bytes.", hacksize);
                             println!("You probably don't want to be using this code on this dataset---it's (possibly) quadratic runtime now.");
                             did_warn_long_sequences = true;
                         }
                     } else {
-                        println!("There is a match longer than 50,000,000 bytes.");
+                        println!("There is a match longer than {} bytes.", hacksize);
                         println!("You probably don't want to be using this code on this dataset---it's quadratic runtime now.");
                         did_warn_long_sequences = true;
                     }
@@ -1038,14 +1059,13 @@ impl<'a> PartialOrd for MergeState<'a> {
     // Make sure we have enough space to take strided offsets for multiple threads
     // This should be an over-approximation, and starts allowing new threads at 1k of data
     let num_threads = std::cmp::min(num_threads, std::cmp::max((texts[0].len() as i64 - 1024)/10, 1));
-    println!("AA {}", num_threads);
 
     // Start a bunch of jobs that each work on non-overlapping regions of the final resulting suffix array
     // Each job is going to look at all of the partial suffix arrays to take the relavent slice.
     let _answer = crossbeam::scope(|scope| {
 
         let mut tables:Vec<BufReader<File>> = (0..nn).map(|x| {
-            std::io::BufReader::new(fs::File::open(format!("{}.table.bin", data_files[x])).unwrap())
+            std::io::BufReader::new(fs::File::open(part_files[x].clone()).unwrap())
         }).collect();
 
         let mut starts = vec![0; nn];
@@ -1066,18 +1086,12 @@ impl<'a> PartialOrd for MergeState<'a> {
                 }
             }
 
-            for j in 0..ends.len() {
-                let l = &texts[j][table_load_disk(&mut tables[j], starts[j], ratio as usize)..];
-                let l = &l[..std::cmp::min(l.len(), 20)];
-                println!("Text{} {:?}", j, l);
-            }
-
-            println!("Spawn {}: {:?} {:?}", i, starts, ends);
+            // println!("Spawn {}: {:?} {:?}", i, starts, ends);
 
             let starts2 = starts.clone();
             let ends2 = ends.clone();
-            //println!("OK {} {}", starts2, ends2);
             let texts_len2 = texts_len.clone();
+            let part_files2 = part_files.clone();
             let _one_result = scope.spawn(move || {
                 worker(texts,
                        starts2,
@@ -1086,9 +1100,8 @@ impl<'a> PartialOrd for MergeState<'a> {
                        i,
                        (*merged_dir).clone(),
                        (*bwt_dir).clone(),
-                       (*data_files).clone(),
+                       part_files2,
                        ratio as usize,
-                       big_ratio as usize,
                        hacksize
                 );
             });
@@ -1099,12 +1112,90 @@ impl<'a> PartialOrd for MergeState<'a> {
         }
     });
 
-    // println!("Finish writing");
-    // let mut buffer = File::create(output_file)?;
-    // for i in 0..texts.len()-1 {
-    //     buffer.write_all(&texts[i][..texts[i].len()-HACKSIZE])?;
-    // }
-    // buffer.write_all(&texts[texts.len()-1])?;
+    Ok(())
+  }
+
+ fn cmd_concat(fpath: &String, merged_dir: &String, merged_file: &String, bwt_dir: &String, bwt_file: &String, num_threads: i64, ratio: usize)  -> std::io::Result<()> {
+
+    let mut ds_file = fs::File::open(fpath).unwrap();
+    let mut ds_header_buf = [0u8; 8];
+    ds_file.read_exact(&mut ds_header_buf).unwrap();
+    let ds_size = u64::from_le_bytes(ds_header_buf) / 8;
+
+    // on-disk files to store concat'ed sa
+    let mut merged_buf = OpenOptions::new().write(true).create(true).open(merged_file).unwrap();
+    let mut merged_buf_size = ds_size * ratio as u64;
+    if merged_buf_size % 8 != 0 {
+        merged_buf_size += 8 - (merged_buf_size % 8);
+    }
+    merged_buf_size += 9;
+    merged_buf.set_len(merged_buf_size).unwrap();
+    merged_buf.seek(SeekFrom::End(-8)).expect("Seek failed!");
+    merged_buf.write_all(&[0u8; 8]).expect("Write OK");
+    merged_buf.seek(SeekFrom::Start(0)).expect("Seek failed!");
+    let merged_size = ds_size * ratio as u64;
+    merged_buf.write_all(&(merged_size * 8).to_le_bytes()).expect("Write OK");
+    merged_buf.write_all(&((ratio * 8) as u8).to_le_bytes()).expect("Write OK");
+    drop(merged_buf);
+
+    // on-disk files to store concat'ed bwt
+    let mut bwt_buf = OpenOptions::new().write(true).create(true).open(bwt_file).unwrap();
+    let mut bwt_buf_size = ds_size;
+    if bwt_buf_size % 8 != 0 {
+        bwt_buf_size += 8 - (bwt_buf_size % 8);
+    }
+    bwt_buf_size += 8;
+    bwt_buf.set_len(bwt_buf_size).unwrap();
+    bwt_buf.seek(SeekFrom::End(-8)).expect("Seek failed!");
+    bwt_buf.write_all(&[0u8; 8]).expect("Write OK");
+    bwt_buf.seek(SeekFrom::Start(0)).expect("Seek failed!");
+    bwt_buf.write_all(&(ds_size * 8).to_le_bytes()).expect("Write OK");
+    drop(bwt_buf);
+
+    // this worker writes to concat'ed sa and bwt to disk
+    fn cat_worker(part: usize, offset: u64, ratio: usize, merged_dir: String, merged_file: String, bwt_dir: String, bwt_file: String) {
+        let mut buffer = vec![0u8; ratio*1024*1024];
+
+        let merged_part_file = format!("{}/{:04}", merged_dir, part);
+        let mut merged_part = std::io::BufReader::new(fs::File::open(merged_part_file).unwrap());
+        let mut merged = std::io::BufWriter::new(OpenOptions::new().write(true).open(merged_file).unwrap());
+        let merged_offset = 9 + (ratio as u64) * offset;
+        merged.seek(SeekFrom::Start(merged_offset)).expect("Seek failed!");
+        while let Ok(n) = merged_part.read(&mut buffer) {
+            assert!(n % ratio == 0);
+            if n == 0 { break; }
+            merged.write_all(&buffer[..n]).expect("Write OK");
+        }
+
+        let bwt_part_file = format!("{}/{:04}", bwt_dir, part);
+        let mut bwt_part = std::io::BufReader::new(fs::File::open(bwt_part_file).unwrap());
+        let mut bwt = std::io::BufWriter::new(OpenOptions::new().write(true).open(bwt_file).unwrap());
+        let bwt_offset = 8 + offset;
+        bwt.seek(SeekFrom::Start(bwt_offset)).expect("Seek failed!");
+        while let Ok(n) = bwt_part.read(&mut buffer) {
+            if n == 0 { break; }
+            bwt.write_all(&buffer[..n]).expect("Write OK");
+        }
+    }
+
+    let _answer = crossbeam::scope(|scope| {
+        let mut offset = 0;
+        for i in 0..num_threads as usize {
+            let _one_result = scope.spawn(move || {
+                cat_worker(
+                    i,
+                    offset,
+                    ratio,
+                    (*merged_dir).clone(),
+                    (*merged_file).clone(),
+                    (*bwt_dir).clone(),
+                    (*bwt_file).clone()
+                );
+            });
+            offset += std::fs::metadata(format!("{}/{:04}", bwt_dir, i)).unwrap().len();
+        }
+    });
+
     Ok(())
 }
 
@@ -1238,8 +1329,8 @@ fn main()  -> std::io::Result<()> {
             cmd_make(data_file)?;
         }
 
-        Commands::MakePart { data_file, parts_dir, start_byte, end_byte } => {
-            cmd_make_part(data_file, parts_dir, *start_byte as u64, *end_byte as u64)?;
+        Commands::MakePart { data_file, parts_dir, start_byte, end_byte, ratio } => {
+            cmd_make_part(data_file, parts_dir, *start_byte as u64, *end_byte as u64, *ratio)?;
         }
 
         Commands::CountOccurrences { data_file, query_file } => {
@@ -1264,8 +1355,12 @@ fn main()  -> std::io::Result<()> {
                                *num_threads)?;
         }
 
-        Commands::Merge { suffix_path, merged_dir, bwt_dir, num_threads, hacksize } => {
-            cmd_merge(suffix_path, merged_dir, bwt_dir, *num_threads, *hacksize)?;
+        Commands::Merge { data_file, parts_dir, merged_dir, bwt_dir, num_threads, hacksize, ratio } => {
+            cmd_merge(data_file, parts_dir, merged_dir, bwt_dir, *num_threads, *hacksize, *ratio)?;
+        }
+
+        Commands::Concat { data_file, merged_dir, merged_file, bwt_dir, bwt_file, num_threads, ratio } => {
+            cmd_concat(data_file, merged_dir, merged_file, bwt_dir, bwt_file, *num_threads, *ratio)?;
         }
 
         Commands::Collect { data_file, cache_dir, length_threshold } => {
