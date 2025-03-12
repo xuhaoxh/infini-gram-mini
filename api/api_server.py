@@ -126,4 +126,4 @@ def query():
         return jsonify({'error': f'[Flask] Internal server error: {e}'}), 500
     return jsonify(result), 200
 
-app.run(host='0.0.0.0', port=args.FLASK_PORT, threaded=False)
+app.run(host='0.0.0.0', port=args.FLASK_PORT, threaded=False, processes=10)
