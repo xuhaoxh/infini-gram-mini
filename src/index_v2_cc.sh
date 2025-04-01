@@ -30,7 +30,6 @@ gantry run \
     set -exuo pipefail; \
     IFS=$'\n\t'; \
     conda shell.bash activate base; \
-    git checkout dclm; \
     conda install isl=0.12.2 mpc=1.0.3 mpfr=3.1.4; \
     export LD_LIBRARY_PATH=/opt/conda/lib:\$LD_LIBRARY_PATH; \
     conda install psi4::gcc-5=5.2.0; \

@@ -2,6 +2,7 @@ import argparse
 import multiprocessing as mp
 import os
 import resource
+import shutil
 import subprocess
 import sys
 from tqdm import tqdm
@@ -57,6 +58,8 @@ def main():
         build_sa_bwt(args, mode='data')
         build_sa_bwt(args, mode='meta')
         print(os.popen(f'./cpp_indexing {args.save_dir} 2>/dev/null').read(), flush=True)
+
+        shutil.rmtree(data_dir)
 
 if __name__ == '__main__':
     main()

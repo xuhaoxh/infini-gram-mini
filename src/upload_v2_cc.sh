@@ -2,7 +2,7 @@
 
 set -ex
 
-RUN_NAME="upload_fm_v2_dclm_all"
+RUN_NAME="upload_fm_v2_cc"
 
 gantry run \
   --allow-dirty \
@@ -15,7 +15,7 @@ gantry run \
   --cluster ai2/neptune-cirrascale \
   --cluster ai2/ceres-cirrascale \
   --priority high \
-  --not-preemptible \
+  --no-nfs \
   --weka oe-training-default:/weka/oe-training-default \
   --env-secret GITHUB_TOKEN=GITHUB_TOKEN_HF \
   --no-python \
@@ -23,5 +23,5 @@ gantry run \
   -- /bin/bash -c "\
     set -exuo pipefail; \
     IFS=$'\n\t'; \
-    for i in {0..24}; do scp -o StrictHostKeyChecking=no -i /weka/oe-training-default/jiachengl/hf-fm/fm-index-ai2.pem -r /weka/oe-training-default/jiachengl/hf-fm/index/v2_dclm_all/\$(printf '%02d' \$i) ubuntu@3.95.52.164:/data_v2_dclm/v2_dclm_all/; done; \
+    for i in {0..14}; do scp -o StrictHostKeyChecking=no -i /weka/oe-training-default/jiachengl/hf-fm/fm-index-ai2.pem -r /weka/oe-training-default/jiachengl/hf-fm/index/v2_cc/2025-05/\$(printf '%02d' \$i) ubuntu@3.95.52.164:/data_v2_cc-2025-05/v2_cc-2025-05/; done; \
     "
