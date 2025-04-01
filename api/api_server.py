@@ -1,6 +1,8 @@
 import argparse
 from flask import Flask, jsonify, request
 import json
+import os
+import requests
 import sys
 import time
 import traceback
@@ -13,6 +15,8 @@ parser.add_argument('--FLASK_PORT', type=int, default=5000)
 parser.add_argument('--CONFIG_FILE', type=str, default='api_config.json')
 parser.add_argument('--LOG_PATH', type=str, default=None)
 args = parser.parse_args()
+
+AI2_API_URL = os.environ.get(f'AI2_API_URL_{args.MODE.upper()}', None)
 
 class Processor:
 
@@ -100,6 +104,16 @@ def query():
     print(data)
     log.write(json.dumps(data) + '\n')
     log.flush()
+
+    index = data['index'] if 'index' in data else ''
+    if any(prefix in index for prefix in ['dclm', 'cc-']) and AI2_API_URL is not None:
+        try:
+            response = requests.post(AI2_API_URL, json=data, timeout=30)
+        except requests.exceptions.Timeout:
+            return jsonify({'error': f'[Flask] Web request timed out. Please try again later.'}), 500
+        except requests.exceptions.RequestException as e:
+            return jsonify({'error': f'[Flask] Web request error: {e}'}), 500
+        return jsonify(response.json()), response.status_code
 
     try:
         query_type = data['query_type']
