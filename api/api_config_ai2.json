@@ -1,0 +1,56 @@
+[
+    {
+        "name": "v2_dclm_all",
+        "index_dirs": [
+            "/data_v2_dclm/v2_dclm_all/00",
+            "/data_v2_dclm/v2_dclm_all/01",
+            "/data_v2_dclm/v2_dclm_all/02",
+            "/data_v2_dclm/v2_dclm_all/03",
+            "/data_v2_dclm/v2_dclm_all/04",
+            "/data_v2_dclm/v2_dclm_all/05",
+            "/data_v2_dclm/v2_dclm_all/06",
+            "/data_v2_dclm/v2_dclm_all/07",
+            "/data_v2_dclm/v2_dclm_all/08",
+            "/data_v2_dclm/v2_dclm_all/09",
+            "/data_v2_dclm/v2_dclm_all/10",
+            "/data_v2_dclm/v2_dclm_all/11",
+            "/data_v2_dclm/v2_dclm_all/12",
+            "/data_v2_dclm/v2_dclm_all/13",
+            "/data_v2_dclm/v2_dclm_all/14",
+            "/data_v2_dclm/v2_dclm_all/15",
+            "/data_v2_dclm/v2_dclm_all/16",
+            "/data_v2_dclm/v2_dclm_all/17",
+            "/data_v2_dclm/v2_dclm_all/18",
+            "/data_v2_dclm/v2_dclm_all/19",
+            "/data_v2_dclm/v2_dclm_all/20",
+            "/data_v2_dclm/v2_dclm_all/21",
+            "/data_v2_dclm/v2_dclm_all/22",
+            "/data_v2_dclm/v2_dclm_all/23",
+            "/data_v2_dclm/v2_dclm_all/24"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
+        "name": "v2_cc-2025-05",
+        "index_dirs": [
+            "/data_v2_cc-2025-05/v2_cc-2025-05/00",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/01",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/02",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/03",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/04",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/05",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/06",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/07",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/08",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/09",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/10",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/11",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/12",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/13",
+            "/data_v2_cc-2025-05/v2_cc-2025-05/14"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    }
+]

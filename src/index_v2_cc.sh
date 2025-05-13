@@ -2,7 +2,7 @@
 
 set -ex
 
-RUN_NAME="fm_v2_dclm_all"
+RUN_NAME="fm_v2_cc-2025-05"
 
 gantry run \
   --allow-dirty \
@@ -30,11 +30,10 @@ gantry run \
     set -exuo pipefail; \
     IFS=$'\n\t'; \
     conda shell.bash activate base; \
-    git checkout dclm; \
     conda install isl=0.12.2 mpc=1.0.3 mpfr=3.1.4; \
     export LD_LIBRARY_PATH=/opt/conda/lib:\$LD_LIBRARY_PATH; \
     conda install psi4::gcc-5=5.2.0; \
     pip install zstandard numpy tqdm awscli; \
     cd src; \
-    python index_v2_dclm.py --cpus 186 --mem 1860; \
+    python index_v2_cc.py --cpus 186 --mem 1860; \
     "

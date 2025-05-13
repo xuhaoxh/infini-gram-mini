@@ -23,6 +23,8 @@ const char KEY_TEXT_INT[] 	= "text_int";
 const char KEY_PSI[] 		= "psi";
 const char KEY_LCP[] 		= "lcp";
 const char KEY_SAMPLE_CHAR[]= "sample_char";
+const char KEY_SAMPLED_SA[] = "sampled_sa";
+const char KEY_SAMPLED_ISA[]= "sampled_isa";
 }
 typedef uint64_t int_vector_size_type;
 

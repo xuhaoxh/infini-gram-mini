@@ -1,6 +1,8 @@
 import argparse
 from flask import Flask, jsonify, request
 import json
+import os
+import requests
 import sys
 import time
 import traceback
@@ -14,14 +16,19 @@ parser.add_argument('--CONFIG_FILE', type=str, default='api_config.json')
 parser.add_argument('--LOG_PATH', type=str, default=None)
 args = parser.parse_args()
 
+AI2_API_URL = os.environ.get(f'AI2_API_URL_{args.MODE.upper()}', None)
+
 class Processor:
 
     def __init__(self, config):
-        assert 'dir' in config
+        assert 'index_dirs' in config
         assert 'load_to_ram' in config
         assert 'get_metadata' in config
 
-        self.engine = FmIndexEngine(index_dir=config['dir'], load_to_ram=config['load_to_ram'], get_metadata=config['get_metadata'])
+        start_time = time.time()
+        self.engine = FmIndexEngine(index_dirs=config['index_dirs'], load_to_ram=config['load_to_ram'], get_metadata=config['get_metadata'])
+        end_time = time.time()
+        print(f'Loaded index "{config["name"]}" in {end_time - start_time:.3f} seconds')
 
     def process(self, query_type, query, **kwargs):
         if type(query) != str:
@@ -37,8 +44,11 @@ class Processor:
     def count(self, query):
         return self.engine.count(query=query)
 
-    def reconstruct(self, query, num_occ, pre_text, post_text):
-        result = self.engine.reconstruct(query=query, num_occ=num_occ, pre_text=pre_text, post_text=post_text)
+    def find(self, query):
+        return self.engine.find(query=query)
+
+    def get_doc_by_rank(self, query, s, rank, max_ctx_len):
+        result = self.engine.get_doc_by_rank(s=s, rank=rank, needle_len=len(query), max_ctx_len=max_ctx_len)
 
         if 'error' in result:
             return result
@@ -54,7 +64,7 @@ class Processor:
                     haystack = span[0]
                     new_spans += self._replace(haystack, needle, label='0')
             spans = new_spans
-        result = {'spans': spans, 'metadata': result['metadata']}
+        result['spans'] = spans
 
         return result
 
@@ -95,6 +105,16 @@ def query():
     log.write(json.dumps(data) + '\n')
     log.flush()
 
+    index = data['index'] if 'index' in data else ''
+    if any(prefix in index for prefix in ['dclm', 'cc-']) and AI2_API_URL is not None:
+        try:
+            response = requests.post(AI2_API_URL, json=data, timeout=30)
+        except requests.exceptions.Timeout:
+            return jsonify({'error': f'[Flask] Web request timed out. Please try again later.'}), 500
+        except requests.exceptions.RequestException as e:
+            return jsonify({'error': f'[Flask] Web request error: {e}'}), 500
+        return jsonify(response.json()), response.status_code
+
     try:
         query_type = data['query_type']
         index = data['index']
@@ -120,4 +140,4 @@ def query():
         return jsonify({'error': f'[Flask] Internal server error: {e}'}), 500
     return jsonify(result), 200
 
-app.run(host='0.0.0.0', port=args.FLASK_PORT, threaded=False)
+app.run(host='0.0.0.0', port=args.FLASK_PORT, threaded=False, processes=10)
