@@ -19,7 +19,7 @@
 
 using namespace std;
 using namespace sdsl;
-namespace fs = std::filesystem;
+namespace fs = filesystem;
 using namespace chrono;
 
 typedef unsigned long size_t;
@@ -217,7 +217,10 @@ public:
 
         string data = "";
         if (disp_start_ptr < disp_end_ptr) {
-            data = sdsl::extract(*shard.data_index, disp_start_ptr, disp_end_ptr - 1);
+            // data = sdsl::extract(*shard.data_index, disp_start_ptr, disp_end_ptr - 1);
+            size_t num_threads = thread::hardware_concurrency();
+            cout << "concurrency: " << num_threads << endl;
+            data = parallel_extract(s, disp_start_ptr, disp_end_ptr, num_threads, false);
         }
 
         string meta = "";
@@ -225,11 +228,53 @@ public:
             size_t meta_start_ptr = _convert_doc_ix_to_meta_ptr(shard, local_doc_ix); // left-inclusive
             size_t meta_end_ptr = _convert_doc_ix_to_meta_ptr(shard, local_doc_ix + 1) - 1; // right-exclusive; -1 because there is a trailing \n
             if (meta_start_ptr < meta_end_ptr) {
-                meta = sdsl::extract(*shard.meta_index, meta_start_ptr, meta_end_ptr - 1);
+                // meta = sdsl::extract(*shard.meta_index, meta_start_ptr, meta_end_ptr - 1);
+                size_t num_threads = thread::hardware_concurrency();
+                meta = parallel_extract(s, meta_start_ptr, meta_end_ptr, num_threads, true);
             }
         }
 
         return DocResult{ .doc_ix = doc_ix, .doc_len = doc_len, .disp_len = disp_len, .needle_offset = needle_offset, .meta = meta, .data = data, };
+    }
+
+    string parallel_extract(size_t shard_index, size_t disp_start_ptr, size_t disp_end_ptr, size_t num_threads, bool is_meta) const {
+        if (disp_start_ptr >= disp_end_ptr) return "";
+
+        const size_t total_len = disp_end_ptr - disp_start_ptr;
+        const size_t chunk_size = (total_len + num_threads - 1) / num_threads;
+
+        vector<string> segments(num_threads);
+        vector<thread> threads;
+
+        for (size_t i = 0; i < num_threads; ++i) {
+            const size_t start = disp_start_ptr + i * chunk_size;
+            if (start >= disp_end_ptr) {
+                segments[i] = "";
+                continue;
+            }
+
+            const size_t end = min(start + chunk_size, disp_end_ptr);
+            threads.emplace_back(&Engine::_extract_thread, this, shard_index, start, end, &segments[i], is_meta);
+        }
+
+        for (auto &t : threads) {
+            t.join();
+        }
+        
+        string result;
+        for (auto &seg : segments) {
+            result += seg;
+        }
+
+        return result;
+    }
+
+    void _extract_thread(size_t shard_index, size_t start, size_t end, string* out, bool is_meta) const {
+        if (is_meta) {
+            *out = sdsl::extract(*_shards[shard_index].meta_index, start, end - 1); // inclusive
+        } else {
+            *out = sdsl::extract(*_shards[shard_index].data_index, start, end - 1); // inclusive
+        }
     }
 
     // LocateResult locate(const string& query, size_t num_occ) const {
@@ -269,12 +314,12 @@ public:
     //     }
 
     //     size_t start = (location < pre_text) ? 0 : location - pre_text;
-    //     size_t end = std::min(location + query.length() + post_text, _shards[shard_num].data_index->size() - 1);
+    //     size_t end = min(location + query.length() + post_text, _shards[shard_num].data_index->size() - 1);
 
     //     auto s = sdsl::extract(*_shards[shard_num].data_index, start, end);
     //     // auto s = sdsl::extract(temp_index, location - pre_text, location + query.length() + post_text);
     //     auto pos = s.find("\xff");
-    //     while (pos != std::string::npos) {
+    //     while (pos != string::npos) {
     //         if (pos > pre_text) {
     //             s.erase(pos);
     //         } else {
