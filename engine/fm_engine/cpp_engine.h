@@ -200,9 +200,7 @@ public:
         string text = "";
         if (disp_start_ptr < disp_end_ptr) {
             // text = sdsl::extract(*shard.data_index, disp_start_ptr, disp_end_ptr - 1);
-            size_t num_threads = thread::hardware_concurrency();
-            cout << "concurrency: " << num_threads << endl;
-            data = parallel_extract(s, disp_start_ptr, disp_end_ptr, num_threads, false);
+            text = parallel_extract(s, disp_start_ptr, disp_end_ptr, false);
         }
 
         string metadata = "";
@@ -211,18 +209,20 @@ public:
             size_t meta_end_ptr = _convert_doc_ix_to_meta_ptr(shard, local_doc_ix + 1) - 1; // right-exclusive; -1 because there is a trailing \n
             if (meta_start_ptr < meta_end_ptr) {
                 // metadata = sdsl::extract(*shard.meta_index, meta_start_ptr, meta_end_ptr - 1);
-                size_t num_threads = thread::hardware_concurrency();
-                meta = parallel_extract(s, meta_start_ptr, meta_end_ptr, num_threads, true);
+                metadata = parallel_extract(s, meta_start_ptr, meta_end_ptr, true);
             }
         }
 
-        return DocResult{ .doc_ix = doc_ix, .doc_len = doc_len, .disp_len = disp_len, .needle_offset = needle_offset, .meta = meta, .data = data, };
+        return DocResult{ .doc_ix = doc_ix, .doc_len = doc_len, .disp_len = disp_len, .needle_offset = needle_offset, .metadata = metadata, .text = text, };
     }
 
-    string parallel_extract(size_t shard_index, size_t disp_start_ptr, size_t disp_end_ptr, size_t num_threads, bool is_meta) const {
+    string parallel_extract(size_t shard_index, size_t disp_start_ptr, size_t disp_end_ptr, bool is_meta) const {
         if (disp_start_ptr >= disp_end_ptr) return "";
 
         const size_t total_len = disp_end_ptr - disp_start_ptr;
+
+        const size_t num_threads = min(total_len / 100, size_t(10));
+
         const size_t chunk_size = (total_len + num_threads - 1) / num_threads;
 
         vector<string> segments(num_threads);
