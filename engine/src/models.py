@@ -4,7 +4,7 @@ class ErrorResponse(TypedDict):
     error: str
 
 T = TypeVar("T")
-FmEngineResponse: TypeAlias = ErrorResponse | T
+EngineResponse: TypeAlias = ErrorResponse | T
 
 class FindResponse(TypedDict):
     cnt: int

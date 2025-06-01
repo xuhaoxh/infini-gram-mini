@@ -221,6 +221,14 @@ public:
 
         const size_t total_len = disp_end_ptr - disp_start_ptr;
 
+        if (total_len < 100) {
+            if (is_meta) {
+                return sdsl::extract(*_shards[shard_index].meta_index, disp_start_ptr, disp_end_ptr - 1); // inclusive
+            } else {
+                return sdsl::extract(*_shards[shard_index].data_index, disp_start_ptr, disp_end_ptr - 1); // inclusive
+            }
+        }
+
         const size_t num_threads = min(total_len / 100, size_t(10));
 
         const size_t chunk_size = (total_len + num_threads - 1) / num_threads;
