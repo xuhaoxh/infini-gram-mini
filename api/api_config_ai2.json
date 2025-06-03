@@ -1,5 +1,22 @@
 [
     {
+        "name": "v2_pileval",
+        "index_dirs": [
+            "/data_v2_pile/v2_pileval"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
+        "name": "v2_piletrain",
+        "index_dirs": [
+            "/data_v2_pile/v2_piletrain/0",
+            "/data_v2_pile/v2_piletrain/1"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
         "name": "v2_dclm_all",
         "index_dirs": [
             "/data_v2_dclm/v2_dclm_all/00",
@@ -49,6 +66,28 @@
             "/data_v2_cc-2025-05/v2_cc-2025-05/12",
             "/data_v2_cc-2025-05/v2_cc-2025-05/13",
             "/data_v2_cc-2025-05/v2_cc-2025-05/14"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
+        "name": "v2_cc-2025-08",
+        "index_dirs": [
+            "/data_v2_cc-2025-08/v2_cc-2025-08/00",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/01",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/02",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/03",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/04",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/05",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/06",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/07",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/08",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/09",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/10",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/11",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/12",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/13",
+            "/data_v2_cc-2025-08/v2_cc-2025-08/14"
         ],
         "load_to_ram": false,
         "get_metadata": true

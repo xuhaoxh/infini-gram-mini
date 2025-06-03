@@ -199,8 +199,8 @@ public:
 
         string text = "";
         if (disp_start_ptr < disp_end_ptr) {
-            // text = sdsl::extract(*shard.data_index, disp_start_ptr, disp_end_ptr - 1);
-            text = parallel_extract(s, disp_start_ptr, disp_end_ptr, false);
+            text = sdsl::extract(*shard.data_index, disp_start_ptr, disp_end_ptr - 1);
+            // text = parallel_extract(s, disp_start_ptr, disp_end_ptr, false);
         }
 
         string metadata = "";
@@ -208,8 +208,8 @@ public:
             size_t meta_start_ptr = _convert_doc_ix_to_meta_ptr(shard, local_doc_ix); // left-inclusive
             size_t meta_end_ptr = _convert_doc_ix_to_meta_ptr(shard, local_doc_ix + 1) - 1; // right-exclusive; -1 because there is a trailing \n
             if (meta_start_ptr < meta_end_ptr) {
-                // metadata = sdsl::extract(*shard.meta_index, meta_start_ptr, meta_end_ptr - 1);
-                metadata = parallel_extract(s, meta_start_ptr, meta_end_ptr, true);
+                metadata = sdsl::extract(*shard.meta_index, meta_start_ptr, meta_end_ptr - 1);
+                // metadata = parallel_extract(s, meta_start_ptr, meta_end_ptr, true);
             }
         }
 

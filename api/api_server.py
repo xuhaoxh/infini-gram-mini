@@ -7,7 +7,7 @@ import sys
 import time
 import traceback
 sys.path.append('../engine')
-from fm_engine.engine import FmIndexEngine
+from src.engine import InfiniGramMiniEngine
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--MODE', type=str, default='api', choices=['api', 'dev', 'demo'])
@@ -26,7 +26,7 @@ class Processor:
         assert 'get_metadata' in config
 
         start_time = time.time()
-        self.engine = FmIndexEngine(index_dirs=config['index_dirs'], load_to_ram=config['load_to_ram'], get_metadata=config['get_metadata'])
+        self.engine = InfiniGramMiniEngine(index_dirs=config['index_dirs'], load_to_ram=config['load_to_ram'], get_metadata=config['get_metadata'])
         end_time = time.time()
         print(f'Loaded index "{config["name"]}" in {end_time - start_time:.3f} seconds')
 
@@ -106,7 +106,7 @@ def query():
     log.flush()
 
     index = data['index'] if 'index' in data else ''
-    if any(prefix in index for prefix in ['dclm', 'cc-']) and AI2_API_URL is not None:
+    if AI2_API_URL is not None:
         try:
             response = requests.post(AI2_API_URL, json=data, timeout=30)
         except requests.exceptions.Timeout:

@@ -4,7 +4,9 @@ channels:
   - defaults
 dependencies:
   - python=3.12.9
+  - gxx=11.2.0
   - pip:
     - flask
     - pybind11
+    - requests
     # compile C++ module
