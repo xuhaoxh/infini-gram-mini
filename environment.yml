@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.11.8
+  - python=3.12.9
   - gxx=11.2.0
   - pip:
     - beaker-gantry
