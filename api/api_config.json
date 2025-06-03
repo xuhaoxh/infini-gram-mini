@@ -1,19 +1,2 @@
 [
-    {
-        "name": "v2_pileval",
-        "index_dirs": [
-            "/data_v2_pile/v2_pileval"
-        ],
-        "load_to_ram": false,
-        "get_metadata": true
-    },
-    {
-        "name": "v2_piletrain",
-        "index_dirs": [
-            "/data_v2_pile/v2_piletrain/0",
-            "/data_v2_pile/v2_piletrain/1"
-        ],
-        "load_to_ram": false,
-        "get_metadata": true
-    }
 ]
