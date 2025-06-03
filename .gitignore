@@ -1,6 +1,6 @@
 **/__pycache__/
 src/construct
-engine/fm_engine/*.so
+engine/src/*.so
 engine/engine_test/cpp_engine_test
 data/
 index/
