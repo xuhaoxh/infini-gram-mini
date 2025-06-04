@@ -1,0 +1,15 @@
+title: infini-gram-mini
+author: Hao Xu, Jiacheng Liu
+email: xuhao510 [at] cs [dot] washington [dot] edu
+
+header_pages:
+  - demo.md
+  - api_doc.md
+  - docs.md
+  - code.md
+  - paper.md
+
+theme: minima
+
+plugins:
+  - jekyll-redirect-from
