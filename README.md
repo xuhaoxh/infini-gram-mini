@@ -5,11 +5,10 @@ This repo hosts the source code of the infini-gram mini search engine, which is 
 To learn more about infini-gram mini:
 * Paper:
 * Project Home:
-* Web Interface:
-* API Endpoint:
-* Python Package:
-* Code:
-* Benchmark Contamination Monitoring System:
+* Web Interface: 
+* API Endpoint: 
+* Code: https://github.com/xuhaoxh/infini-gram-mini
+* Benchmark Contamination Monitoring System: 
 
 
 ## Overview

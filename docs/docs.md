@@ -1,6 +1,6 @@
 ---
 layout: page
 redirect_to:
-  - https://mini.infini-gram.readthedocs.io
+  - https://infini-gram-mini.readthedocs.io
 title: Docs
 ---

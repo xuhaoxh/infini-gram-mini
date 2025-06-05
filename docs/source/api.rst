@@ -1,7 +1,7 @@
 API Endpoint
 ============
 
-The infini-gram mini API endpoint is ``https://api-mini.infini-gram.io/``.
+The infini-gram mini API endpoint is ``https://api.infini-gram-mini.io/``.
 Please make regular HTTP POST requests.
 In your request, please include a JSON payload, and the response will also contain a JSON payload.
 
@@ -20,7 +20,7 @@ Getting Started
 
     curl -X POST -H "Content-Type: application/json" \
         -d '{"index": "v2_cc-2025-05", "query_type": "count", "query": "University of Washington"}' \
-        https://api-mini.infini-gram.io
+        https://api.infini-gram-mini.io/
 
 Outputs:
 
@@ -39,7 +39,7 @@ Outputs:
         'query_type': 'count',
         'query': 'University of Washington',
     }
-    result = requests.post('https://api-mini.infini-gram.io/', json=payload).json()
+    result = requests.post('https://api.infini-gram-mini.io/', json=payload).json()
     print(result)
 
 Outputs::
