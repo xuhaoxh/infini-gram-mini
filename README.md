@@ -4,11 +4,11 @@ This repo hosts the source code of the infini-gram mini search engine, which is 
 
 To learn more about infini-gram mini:
 * Paper:
-* Project Home:
-* Web Interface: 
-* API Endpoint: 
-* Code: https://github.com/xuhaoxh/infini-gram-mini
-* Benchmark Contamination Monitoring System: 
+* Project Home: <https://infini-gram-mini.io/>
+* Web Interface: <https://infini-gram-mini.io/demo>
+* API Endpoint: <https://infini-gram-mini.io/api_doc>
+* Code: <https://infini-gram-mini.io/code>
+* Benchmark Contamination Monitoring System: <https://infini-gram-mini.io/bulletin>
 
 
 ## Overview
