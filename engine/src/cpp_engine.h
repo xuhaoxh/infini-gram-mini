@@ -192,8 +192,10 @@ public:
         size_t doc_end_ptr = _convert_doc_ix_to_ptr(shard, local_doc_ix + 1); // right-exclusive
         size_t doc_len = doc_end_ptr - doc_start_ptr;
 
-        size_t disp_start_ptr = max(doc_start_ptr, ptr < max_ctx_len ? 0 : (ptr - max_ctx_len));
-        size_t disp_end_ptr = min(doc_end_ptr, ptr + needle_len + max_ctx_len);
+        size_t ctx_len = (max_ctx_len - needle_len) / 2;
+
+        size_t disp_start_ptr = max(doc_start_ptr, ptr < ctx_len ? 0 : (ptr - ctx_len));
+        size_t disp_end_ptr = min(doc_end_ptr, ptr + needle_len + ctx_len);
         size_t disp_len = disp_end_ptr - disp_start_ptr;
         size_t needle_offset = ptr - disp_start_ptr;
 

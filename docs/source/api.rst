@@ -60,7 +60,11 @@ We have built the infini-gram mini indexes on several corpora, and you may query
      - Documents
      - Size
      - Corpus
-    * - ``v2_cc_2025-08``
+   * - ``v2_cc_2025-13``
+     - 2,740,844,187
+     - 10,392,880,591,539
+     - `Common Crawl February 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-13/index.html>`_
+   * - ``v2_cc_2025-08``
      - 2,679,706,056
      - 8,163,085,167,146
      - `Common Crawl February 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-08/index.html>`_
@@ -75,11 +79,11 @@ We have built the infini-gram mini indexes on several corpora, and you may query
    * - ``v2_piletrain``
      - 210,607,728
      - 1,307,910,802,542
-     - `DCLM-baseline <https://huggingface.co/datasets/EleutherAI/pile>`_
+     - `Pile-train <https://huggingface.co/datasets/EleutherAI/pile>`_
    * - ``v2_pileval``
      - 214,670
      - 1,344,908,273
-     - `DCLM-baseline <https://huggingface.co/datasets/EleutherAI/pile>`_
+     - `Pile-val <https://huggingface.co/datasets/EleutherAI/pile>`_
         
 
 **Input parameters:**
