@@ -18,9 +18,9 @@ title: Home
 Curious about what’s inside Internet-scale corpora? You’re in the right place 🤩!
 
 <!-- We constructed text indexes that is only **0.44x** their original size (7% of storage requirement of <a href="https://infini-gram.io/">infini-gram</a>).  -->
-We host the union of several open text corpora: {[Common Crawl 2025 Janurary-March crawls](https://commoncrawl.org/), [DCLM-baseline](https://huggingface.co/datasets/mlfoundations/dclm-baseline-1.0), and [Pile](https://huggingface.co/datasets/EleutherAI/pile)}. In total, we indexed **45.6 TB** of text corpora, which is **the largest body of text in the current open-source community** (as of May 2025).
+We make several open text corpora **searchable**: {[Common Crawl 2025 Janurary-March crawls](https://commoncrawl.org/), [DCLM-baseline](https://huggingface.co/datasets/mlfoundations/dclm-baseline-1.0), and [Pile](https://huggingface.co/datasets/EleutherAI/pile)}. In total, these encompass **45.6 TB** of text, which is the **largest body of searchable text** in the open-source community (as of May 2025).
 
-**Infini-gram mini** is an efficient search engine designed to handle arbitrarily long queries across Internet-scale corpora with small storage overhead. The text index is only **0.44x** their original size (7% of storage requirement of the original <a href="https://infini-gram.io/">infini-gram</a>.
+**Infini-gram mini** is an efficient search engine designed to handle exact-match search on arbitrarily long queries across Internet-scale corpora with small storage overhead. The index takes only 44% as much storage as the text it indexes (7% of storage requirement of the OG <a href="https://infini-gram.io/">infini-gram</a>).
 
 Infini-gram mini can count the exact number of matches for a given string in under a second on CC 2025 January crawl (9.1 TB).
 

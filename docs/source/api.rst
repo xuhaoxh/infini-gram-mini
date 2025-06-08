@@ -51,40 +51,53 @@ Overview
 
 **Available indexes:**
 
-We have built the infini-gram mini indexes on several corpora, and you may query them through the API.
+We have built the infini-gram mini indexes on several corpora, and you may query them through the API. We have also made these indexes publicly available on AWS S3:
 
 .. list-table::
    :header-rows: 1
 
    * - Name
      - Documents
-     - Size
+     - Size of Text
+     - Storage
      - Corpus
+     - S3 URL
    * - ``v2_cc_2025-13``
      - 2,740,844,187
      - 10,392,880,591,539
-     - `Common Crawl February 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-13/index.html>`_
+     - 4,563,390,735,625
+     - `Common Crawl March 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-13/index.html>`_
+     - `s3://infini-gram-mini/index/v2_cc_2025-13/ <s3://infini-gram-mini/index/v2_cc_2025-13/>`_
    * - ``v2_cc_2025-08``
      - 2,679,706,056
      - 8,163,085,167,146
+     - 3,574,481,770,319
      - `Common Crawl February 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-08/index.html>`_
+     - `s3://infini-gram-mini/index/v2_cc_2025-08/ <s3://infini-gram-mini/index/v2_cc_2025-08/>`_
    * - ``v2_cc_2025-05``
      - 3,031,278,337
      - 9,078,722,426,438
+     - 3,972,494,702,207
      - `Common Crawl January 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-05/index.html>`_
+     - `s3://infini-gram-mini/index/v2_cc_2025-05/ <s3://infini-gram-mini/index/v2_cc_2025-05/>`_
    * - ``v2_dclm_all``
      - 2,948,096,911
      - 16,666,308,904,212
+     - 7,522,958,742,785
      - `DCLM-baseline <https://huggingface.co/datasets/mlfoundations/dclm-baseline-1.0>`_
+     - `s3://infini-gram-mini/index/v2_dclm_all/ <s3://infini-gram-mini/index/v2_dclm_all/>`_
    * - ``v2_piletrain``
      - 210,607,728
      - 1,307,910,802,542
+     - 588,495,150,994
      - `Pile-train <https://huggingface.co/datasets/EleutherAI/pile>`_
+     - `s3://infini-gram-mini-lite/index/v2_piletrain/ <s3://infini-gram-mini-lite/index/v2_piletrain/>`_
    * - ``v2_pileval``
      - 214,670
      - 1,344,908,273
+     - 602,074,525
      - `Pile-val <https://huggingface.co/datasets/EleutherAI/pile>`_
-        
+     - `s3://infini-gram-mini-lite/index/v2_pileval/ <s3://infini-gram-mini-lite/index/v2_pileval/>`_
 
 **Input parameters:**
 
