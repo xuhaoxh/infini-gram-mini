@@ -108,7 +108,6 @@ Inference on infini-gram mini is fast. The query latency depends on the size (th
 ## Citation
 
 If you find infini-gram mini useful, please kindly cite our paper:
-
 ```bibtex
 @misc{xu2025infinigramminiexactngram,
       title={Infini-gram mini: Exact n-gram Search at the Internet Scale with FM-Index}, 
