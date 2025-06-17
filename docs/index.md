@@ -9,7 +9,7 @@ title: Home
 
 <p align="center"><sup>1</sup>University of Washington, <sup>2</sup>Allen Institute for AI, <sup>3</sup>Stanford University</p>
 
-<p align="center">[<a href="https://huggingface.co/spaces/infini-gram-mini/infini-gram-mini">Web Interface</a>] [<a href="https://infini-gram-mini.readthedocs.io/en/latest/api.html">API Endpoint</a>]  [<a href="https://infini-gram-mini.readthedocs.io/en/latest/api.html">Docs</a>] [<a href="https://github.com/xuhaoxh/infini-gram-mini">Code</a>] [<a href="">Paper</a>] [<a href="https://huggingface.co/spaces/infini-gram-mini/Benchmark-Contamination-Monitoring-System">Benchmark Contamination Bulletin</a>]</p>
+<p align="center">[<a href="https://huggingface.co/spaces/infini-gram-mini/infini-gram-mini">Web Interface</a>] [<a href="https://infini-gram-mini.readthedocs.io/en/latest/api.html">API Endpoint</a>]  [<a href="https://infini-gram-mini.readthedocs.io/en/latest/api.html">Docs</a>] [<a href="https://github.com/xuhaoxh/infini-gram-mini">Code</a>] [<a href="https://arxiv.org/abs/2506.12229">Paper</a>] [<a href="https://huggingface.co/spaces/infini-gram-mini/Benchmark-Contamination-Monitoring-System">Benchmark Contamination Bulletin</a>]</p>
 
 ---
 
@@ -109,3 +109,14 @@ Inference on infini-gram mini is fast. The query latency depends on the size (th
 
 If you find infini-gram mini useful, please kindly cite our paper:
 
+```bibtex
+@misc{xu2025infinigramminiexactngram,
+      title={Infini-gram mini: Exact n-gram Search at the Internet Scale with FM-Index}, 
+      author={Hao Xu and Jiacheng Liu and Yejin Choi and Noah A. Smith and Hannaneh Hajishirzi},
+      year={2025},
+      eprint={2506.12229},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2506.12229}, 
+}
+```

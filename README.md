@@ -3,7 +3,7 @@
 This repo hosts the source code of the infini-gram mini search engine, which is described in this paper: Infini-gram mini: Exact n-gram Search at the Internet Scale with FM-Index.
 
 To learn more about infini-gram mini:
-* Paper:
+* Paper: <https://arxiv.org/abs/2506.12229>
 * Project Home: <https://infini-gram-mini.io/>
 * Web Interface: <https://infini-gram-mini.io/demo>
 * API Endpoint: <https://infini-gram-mini.io/api_doc>
@@ -110,3 +110,14 @@ We have scripts for the full workflow of downloading datasets and indexing them,
 ## Citation
 If you find infini-gram mini useful, please kindly cite our paper:
 
+```bibtex
+@misc{xu2025infinigramminiexactngram,
+      title={Infini-gram mini: Exact n-gram Search at the Internet Scale with FM-Index}, 
+      author={Hao Xu and Jiacheng Liu and Yejin Choi and Noah A. Smith and Hannaneh Hajishirzi},
+      year={2025},
+      eprint={2506.12229},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2506.12229}, 
+}
+```
