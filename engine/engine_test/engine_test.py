@@ -1,23 +1,21 @@
-# python engine_test/engine_test.py
-# python -m engine_test.engine_test
-
 import numpy as np
 import random
 import time
 import json
+import sys
 
-from engine.src import InfiniGramMiniEngine
+sys.path.append('../engine')
+from src.engine import InfiniGramMiniEngine
 
 def main():
-    engine = InfiniGramMiniEngine(index_dir="../index/v2_pileval", load_to_ram=True, get_metadata=True)
+    engine = InfiniGramMiniEngine(index_dirs=["../index/v2_pileval"], load_to_ram=False, get_metadata=True)
 
     query = "nature"
     print(engine.count(query))
     print()
-    idx = random.randint(1, 1000)
-    print(f"idx: {idx}")
-    print(engine.reconstruct(query, 1, 100, 100))
+    print(engine.find(query))
     print()
+    print(engine.get_doc_by_rank(s=0, rank=909665931, needle_len=len(query), max_ctx_len=20))
 
 if __name__ == '__main__':
     main()

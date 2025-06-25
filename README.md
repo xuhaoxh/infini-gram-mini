@@ -32,9 +32,9 @@ Create an engine instance using the appropriate index directory. You can configu
 - Whether to return metadata for each result (`get_metadata=True`).
 
 ```python
-from engine.src import InfiniGramMiniEngine
+from src.engine import InfiniGramMiniEngine
 
-engine = InfiniGramMiniEngine(index_dir="index/v2_piletrain", load_to_ram=False, get_metadata=True)
+engine = InfiniGramMiniEngine(index_dirs=["../index/v2_piletrain"], load_to_ram=False, get_metadata=True)
 ```
 
 ### 2. Counting a query

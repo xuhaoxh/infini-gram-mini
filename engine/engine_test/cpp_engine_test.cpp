@@ -6,7 +6,7 @@
 #include <random>
 
 int main() {
-    auto engine = InfiniGramMiniEngine({"../index/v2_pileval"}, false, false);
+    auto engine = Engine({"../index/v2_pileval"}, false, true);
 
     {
         string query = "natural language processing";
