@@ -17,6 +17,25 @@
         "get_metadata": true
     },
     {
+        "name": "v2_dolmino-mix-1124-minus-olmo-mix-1124",
+        "index_dirs": [
+            "/data_v2_pile/v2_dolmino-mix-1124-minus-olmo-mix-1124"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
+        "name": "v2_olmoe-mix-0924-nodclm",
+        "index_dirs": [
+            "/data_v2_pile/v2_olmoe-mix-0924-nodclm/0",
+            "/data_v2_pile/v2_olmoe-mix-0924-nodclm/2",
+            "/data_v2_pile/v2_olmoe-mix-0924-nodclm/3",
+            "/data_v2_pile/v2_olmoe-mix-0924-nodclm/4"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
         "name": "v2_dclm_all",
         "index_dirs": [
             "/data_v2_dclm/v2_dclm_all/00",
@@ -88,6 +107,76 @@
             "/data_v2_cc-2025-08/v2_cc-2025-08/12",
             "/data_v2_cc-2025-08/v2_cc-2025-08/13",
             "/data_v2_cc-2025-08/v2_cc-2025-08/14"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
+        "name": "v2_cc-2025-13",
+        "index_dirs": [
+            "/data_v2_cc-2025-13/v2_cc-2025-13/00",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/01",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/02",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/03",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/04",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/05",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/06",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/07",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/08",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/09",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/10",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/11",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/12",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/13",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/14",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/15",
+            "/data_v2_cc-2025-13/v2_cc-2025-13/16"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
+        "name": "v2_cc-2025-18",
+        "index_dirs": [
+            "/data_v2_cc-2025-18/v2_cc-2025-18/00",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/01",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/02",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/03",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/04",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/05",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/06",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/07",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/08",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/09",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/10",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/11",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/12",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/13",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/14",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/15",
+            "/data_v2_cc-2025-18/v2_cc-2025-18/16"
+        ],
+        "load_to_ram": false,
+        "get_metadata": true
+    },
+    {
+        "name": "v2_cc-2025-21",
+        "index_dirs": [
+            "/data_v2_cc-2025-21/v2_cc-2025-21/00",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/01",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/02",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/03",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/04",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/05",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/06",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/07",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/08",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/09",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/10",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/11",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/12",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/13",
+            "/data_v2_cc-2025-21/v2_cc-2025-21/14"
         ],
         "load_to_ram": false,
         "get_metadata": true
