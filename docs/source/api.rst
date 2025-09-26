@@ -62,6 +62,30 @@ We have built the infini-gram mini indexes on several corpora, and you may query
      - Storage
      - Corpus
      - S3 URL
+   * - ``v2_cc_2025-30``
+     - 2,422,580,507
+     - 9,006,670,841,302
+     - 3,952,011,554,271
+     - `Common Crawl July 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-30/index.html>`_
+     - `s3://infini-gram-mini/index/v2_cc_2025-30/ <s3://infini-gram-mini/index/v2_cc_2025-30/>`_
+   * - ``v2_cc_2025-26``
+     - 2,385,603,949
+     - 8,724,467,185,944
+     - 3,835,509,233,207
+     - `Common Crawl June 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-26/index.html>`_
+     - `s3://infini-gram-mini/index/v2_cc_2025-26/ <s3://infini-gram-mini/index/v2_cc_2025-26/>`_
+   * - ``v2_cc_2025-21``
+     - 2,477,165,602
+     - 9,221,516,423,510
+     - 4,032,770,896,623
+     - `Common Crawl May 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-21/index.html>`_
+     - `s3://infini-gram-mini/index/v2_cc_2025-21/ <s3://infini-gram-mini/index/v2_cc_2025-21/>`_
+   * - ``v2_cc_2025-18``
+     - 2,747,336,110
+     - 10,498,329,726,165
+     - 4,664,255,665,185
+     - `Common Crawl April 2025 Crawl <https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-18/index.html>`_
+     - `s3://infini-gram-mini/index/v2_cc_2025-18/ <s3://infini-gram-mini/index/v2_cc_2025-18/>`_
    * - ``v2_cc_2025-13``
      - 2,740,844,187
      - 10,392,880,591,539
