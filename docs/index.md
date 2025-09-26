@@ -66,7 +66,7 @@ Below we show a few results from our paper, which uses infini-gram mini for benc
 
 <h2 align="center">Analyzing benchmark contamination</h2>
 
-Using infini-gram mini, we can easily detect lexical overlap between benchmark entries and text corpus, thus finding contaminated benchmark entries. We find several core LM evaluation benchmarks to be heavily contaminated in Internet crawls (e.g., 32.6% in ARC-Challenge and 27.7% in MMLU), which could lead to overestimating the capabilities of language models if trained on such data.
+Using infini-gram mini, we can easily detect lexical overlap between benchmark entries and text corpus, thus finding contaminated benchmark entries. We find several core LM evaluation benchmarks to be heavily contaminated in Internet crawls (e.g., 74.2% in GSM8K and 40.0% in AIME-2024), which could lead to overestimating the capabilities of language models if trained on such data.
 
 <p align="center">
   <img src="assets/contam.png" style="width: 75%;" />
